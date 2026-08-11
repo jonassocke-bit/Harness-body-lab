@@ -1,4 +1,4 @@
-# Harness Body Lab v0.3 — Flat GitHub Upload
+# Harness Body Lab v0.4 — Flat GitHub Upload
 
 Alle Dateien direkt in den Root deines GitHub-Repositories hochladen:
 
@@ -23,7 +23,7 @@ Danach GitHub Pages auf `main` / root aktivieren.
 
 ## Wichtig
 
-v0.3 verwendet bereits das echte MakeHuman Base-Mesh, die einzelnen Körperregler sind aber zunächst eine browserseitige, regionsbasierte Deformation. Das ist absichtlich ein Zwischenschritt: So können wir Aussehen und iPhone-Performance testen, bevor wir den größeren Satz echter MakeHuman `.target`-Morphs integrieren.
+v0.4 verwendet bereits das echte MakeHuman Base-Mesh, die einzelnen Körperregler sind aber zunächst eine browserseitige, regionsbasierte Deformation. Das ist absichtlich ein Zwischenschritt: So können wir Aussehen und iPhone-Performance testen, bevor wir den größeren Satz echter MakeHuman `.target`-Morphs integrieren.
 
 Quelle des Base-Mesh:
 `naver/anny/src/anny/data/mpfb2/3dobjs/base.obj`
@@ -31,10 +31,19 @@ Quelle des Base-Mesh:
 Anny dokumentiert die gebündelten MPFB2-Daten als CC0.
 
 
-## v0.3 Fixes
+## v0.4 Fixes
 
 - Automatic anatomical-axis detection fixes the body appearing sideways/lying down.
 - Shoulder/chest/waist controls now use torso-spatial masks.
 - Shoulder changes no longer scale hands merely because the arms are at shoulder height.
 - Arm thickness fades out before wrists and hands.
 - Pelvis and leg deformations are spatially isolated as well.
+
+
+## v0.4 camera/orientation fix
+
+- Fixed hm08 axes: X width, Y height, Z depth.
+- Mesh is centered in X and Z; feet stay at Y=0.
+- Orbit target comes from the actual body bounding box.
+- Initial camera distance is fitted to both full height and full arm-span.
+- Zoom-out range increased substantially.

@@ -5,8 +5,8 @@ const ASSET_URL =
  "https://cdn.jsdelivr.net/gh/naver/anny@main/src/anny/data/mpfb2/3dobjs/base.obj";
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(34, innerWidth/innerHeight, .01, 20);
-camera.position.set(0, .88, 3.35);
+const camera = new THREE.PerspectiveCamera(34, innerWidth/innerHeight, .01, 100);
+camera.position.set(0, 1, 6);
 
 const viewport = document.querySelector("#viewport");
 const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:"high-performance"});
@@ -17,12 +17,12 @@ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 viewport.appendChild(renderer.domElement);
 
 const orbit = new OrbitControls(camera, renderer.domElement);
-orbit.target.set(0,.88,0);
+orbit.target.set(0,.9,0);
 orbit.enableDamping=true;
 orbit.dampingFactor=.08;
 orbit.enablePan=false;
-orbit.minDistance=2.0;
-orbit.maxDistance=5.5;
+orbit.minDistance=.65;
+orbit.maxDistance=25;
 orbit.rotateSpeed=.65;
 orbit.zoomSpeed=.75;
 
@@ -114,13 +114,13 @@ handle.addEventListener("pointerup",e=>{
 });
 handle.addEventListener("dblclick",()=>setSheet(sheetY<innerHeight*.3?innerHeight*.48:minY,true));
 
-// ---------- OBJ parser ----------
+// ---------- MakeHuman OBJ parser ----------
+// hm08: X = left/right, Y = up, Z = front/back.
 function parseBodyOBJ(text){
  const rawVerts=[[0,0,0]];
  const uv=[[0,0]];
  const faces=[];
  let group="body";
-
  const keepGroup=()=>!(group.startsWith("helper-")||group.startsWith("joint-"));
 
  for(const raw of text.split(/\r?\n/)){
@@ -135,32 +135,13 @@ function parseBodyOBJ(text){
   }
  }
 
- // Detect the anatomical UP axis from the raw basemesh rather than assuming OBJ convention.
- // MakeHuman's vertical axis is strongly offset from zero (feet -> head), while width/depth
- // are approximately centred around zero. This also prevents the previous "lying body" bug.
- const mins=[Infinity,Infinity,Infinity], maxs=[-Infinity,-Infinity,-Infinity];
- for(let i=1;i<rawVerts.length;i++){
-  const v=rawVerts[i];
-  for(let a=0;a<3;a++){mins[a]=Math.min(mins[a],v[a]);maxs[a]=Math.max(maxs[a],v[a]);}
- }
- const ranges=maxs.map((m,a)=>m-mins[a]);
- const mids=maxs.map((m,a)=>(m+mins[a])/2);
- let upAxis=[0,1,2].reduce((best,a)=>Math.abs(mids[a])>Math.abs(mids[best])?a:best,0);
- const horizontal=[0,1,2].filter(a=>a!==upAxis);
- // Of the two centred axes, the larger extent is anatomical left/right, the smaller is depth.
- const widthAxis=ranges[horizontal[0]]>=ranges[horizontal[1]]?horizontal[0]:horizontal[1];
- const depthAxis=horizontal.find(a=>a!==widthAxis);
-
  const positions=[],uvs=[];
- function mapped(ref){
-  let vi=ref[0]; if(vi<0)vi=rawVerts.length+vi;
-  const v=rawVerts[vi];
-  return [v[widthAxis], v[upAxis], v[depthAxis]];
- }
  for(const tri of faces){
   for(const ref of tri){
-   const v=mapped(ref); positions.push(v[0],v[1],v[2]);
-   if(ref[1] && uv[ref[1]]) uvs.push(uv[ref[1]][0],uv[ref[1]][1]);
+   let vi=ref[0]; if(vi<0)vi=rawVerts.length+vi;
+   const v=rawVerts[vi];
+   positions.push(v[0],v[1],-v[2]);
+   if(ref[1] && uv[ref[1]])uvs.push(uv[ref[1]][0],uv[ref[1]][1]);
    else uvs.push(0,0);
   }
  }
@@ -169,7 +150,6 @@ function parseBodyOBJ(text){
  g.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
  g.setAttribute("uv",new THREE.Float32BufferAttribute(uvs,2));
  g.computeVertexNormals();
- g.userData.axisInfo={upAxis,widthAxis,depthAxis,ranges,mids};
  return g;
 }
 
@@ -180,19 +160,53 @@ async function loadBody(){
   const r=await fetch(ASSET_URL,{cache:"force-cache"});
   if(!r.ok)throw new Error(`HTTP ${r.status}`);
   const geo=parseBodyOBJ(await r.text());
-  geo.computeBoundingBox(); const bb=geo.boundingBox;
+  geo.computeBoundingBox(); let bb=geo.boundingBox;
   rawHeight=bb.max.y-bb.min.y;
   const scale=1.82/rawHeight;
-  geo.scale(scale,scale,scale); geo.computeBoundingBox();
-  bbox=geo.boundingBox;yMin=bbox.min.y;yMax=bbox.max.y;rawHeight=yMax-yMin;centerX=(bbox.min.x+bbox.max.x)/2;
-  // center foot plane and x
-  geo.translate(-centerX,-yMin,0); yMin=0;yMax=rawHeight;centerX=0;
+  geo.scale(scale,scale,scale);
+  geo.computeBoundingBox(); bb=geo.boundingBox;
+
+  // Centre X and depth Z. Keep feet exactly on Y=0.
+  const cx=(bb.min.x+bb.max.x)/2;
+  const cz=(bb.min.z+bb.max.z)/2;
+  const footY=bb.min.y;
+  geo.translate(-cx,-footY,-cz);
+  geo.computeBoundingBox();
+
+  bbox=geo.boundingBox;
+  yMin=0; yMax=bbox.max.y; rawHeight=yMax; centerX=0;
   base=new Float32Array(geo.attributes.position.array);
   const mat=new THREE.MeshPhysicalMaterial({
    color:0xe1d4ca, roughness:.72, metalness:0, clearcoat:.06, clearcoatRoughness:.8,
    side:THREE.DoubleSide
   });
   body=new THREE.Mesh(geo,mat);body.castShadow=true;body.receiveShadow=true;scene.add(body);
+
+  function frameWholeBody(){
+    geo.computeBoundingBox();
+    const box=geo.boundingBox;
+    const size=new THREE.Vector3(); box.getSize(size);
+    const center=new THREE.Vector3(); box.getCenter(center);
+
+    orbit.target.set(center.x, center.y, center.z);
+
+    const vFov=THREE.MathUtils.degToRad(camera.fov);
+    const aspect=Math.max(.42, innerWidth/innerHeight);
+    const hFov=2*Math.atan(Math.tan(vFov/2)*aspect);
+    const distH=(size.y*.62)/Math.tan(vFov/2);
+    const distW=(size.x*.62)/Math.tan(hFov/2);
+    const distance=Math.max(distH,distW,4.2);
+
+    camera.position.set(center.x, center.y, center.z + distance);
+    camera.near=Math.max(.01,distance/250);
+    camera.far=Math.max(60,distance*10);
+    camera.updateProjectionMatrix();
+
+    orbit.minDistance=Math.max(.55,distance*.15);
+    orbit.maxDistance=Math.max(25,distance*5);
+    orbit.update();
+  }
+  frameWholeBody();
   document.querySelector("#loading").classList.add("hidden");
   updateBody();
  }catch(err){
