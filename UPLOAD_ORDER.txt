@@ -1,0 +1,19 @@
+Upload these files directly into the root of your GitHub repository:
+
+1. index.html
+2. style.css
+3. app.js
+4. config.js
+5. fallback-body.js
+6. target-loader.js
+7. README.md
+8. TARGET_MAP.md
+9. MAKEHUMAN_ASSETS_README.md
+10. manifest.example.json
+11. LICENSE
+12. .gitignore
+
+Later, when the real MakeHuman assets are added, upload these to the SAME root:
+- base.obj
+- manifest.json
+- every required .target file

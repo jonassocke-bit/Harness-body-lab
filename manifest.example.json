@@ -1,0 +1,23 @@
+{
+  "base": "./base.obj",
+  "scale": 0.1,
+  "yOffset": -1.1,
+  "targets": {
+    "waist": [
+      {
+        "file": "./waist-decrease.target",
+        "amount": -1
+      },
+      {
+        "file": "./waist-increase.target",
+        "amount": 1
+      }
+    ],
+    "hips": [
+      {
+        "file": "./hips-increase.target",
+        "amount": 1
+      }
+    ]
+  }
+}
