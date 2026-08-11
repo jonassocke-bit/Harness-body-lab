@@ -1,49 +1,31 @@
-# Harness Body Lab v0.4 — Flat GitHub Upload
+# Harness Body Lab v0.6 — real MakeHuman target test
 
-Alle Dateien direkt in den Root deines GitHub-Repositories hochladen:
+Flat GitHub Pages project. Upload all five files to the repository root.
 
-- `index.html`
-- `style.css`
-- `app.js`
-- `README.md`
-- `LICENSE`
+## The important change
 
-Danach GitHub Pages auf `main` / root aktivieren.
+The key fitting sliders now load and apply actual MakeHuman `.target` vertex deltas:
 
-## Was sich gegenüber v0.1 geändert hat
+- V-Shape: `torso-vshape-decr/incr`
+- Bust/Chest circumference: `measure-bust-circ-decr/incr`
+- Waist circumference: `measure-waist-circ-decr/incr`
+- Hip circumference: `measure-hips-circ-decr/incr`
+- Buttocks volume: `buttocks-volume-decr/incr`
+- Upper-arm circumference: `measure-upperarm-circ-decr/incr`
+- Thigh horizontal scale: left + right upper-leg targets
+- Calf circumference: `measure-calf-circ-decr/incr`
 
-- Kein Kugel-/Capsule-Platzhalter mehr.
-- Das Projekt lädt das echte MakeHuman/MPFB2 `hm08` Base-Mesh aus NAVER Labs' Anny-Datensatz.
-- `helper-*` und `joint-*` Face Groups werden beim Parsen ausgefiltert.
-- Keine Kleidung wird geladen.
-- Die Körperform wird direkt auf dem gemeinsamen Mesh verändert.
-- Mobile UI als ziehbares Bottom-Sheet mit separatem Scrollbereich.
-- Presets: Female, Neutral, Male, Curvy, Muscular.
-- Regler: Gender, Height, Weight, Muscle, Proportions, Shoulders, Chest, Breast, Waist, Belly, Hips, Butt, Thighs, Calves, Arms.
+The OBJ parser preserves each triangle vertex's original hm08 vertex ID. This is essential:
+MakeHuman targets refer to original mesh vertex indices, while WebGL rendering duplicates
+vertices when quads/polygons are triangulated.
 
-## Wichtig
+Height, Weight and Muscle are deliberately marked with `*`: they remain lightweight
+approximations in this proof-of-concept. Proper MakeHuman macro morphing combines multiple
+macro targets and is the next step only if the real local morph quality is worth continuing.
 
-v0.4 verwendet bereits das echte MakeHuman Base-Mesh, die einzelnen Körperregler sind aber zunächst eine browserseitige, regionsbasierte Deformation. Das ist absichtlich ein Zwischenschritt: So können wir Aussehen und iPhone-Performance testen, bevor wir den größeren Satz echter MakeHuman `.target`-Morphs integrieren.
+## Runtime sources
 
-Quelle des Base-Mesh:
-`naver/anny/src/anny/data/mpfb2/3dobjs/base.obj`
+- Body: NAVER Anny's CC0-adapted MPFB2 hm08 base mesh.
+- Targets: official makehumancommunity/makehuman-assets repository (CC0).
 
-Anny dokumentiert die gebündelten MPFB2-Daten als CC0.
-
-
-## v0.4 Fixes
-
-- Automatic anatomical-axis detection fixes the body appearing sideways/lying down.
-- Shoulder/chest/waist controls now use torso-spatial masks.
-- Shoulder changes no longer scale hands merely because the arms are at shoulder height.
-- Arm thickness fades out before wrists and hands.
-- Pelvis and leg deformations are spatially isolated as well.
-
-
-## v0.4 camera/orientation fix
-
-- Fixed hm08 axes: X width, Y height, Z depth.
-- Mesh is centered in X and Z; feet stay at Y=0.
-- Orbit target comes from the actual body bounding box.
-- Initial camera distance is fitted to both full height and full arm-span.
-- Zoom-out range increased substantially.
+The app fetches these through jsDelivr so the GitHub repository itself stays flat and tiny.

@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
 <meta name="theme-color" content="#111111"/>
-<title>Harness Body Lab v2</title>
+<title>Harness Body Lab v0.6</title>
 <link rel="stylesheet" href="./style.css"/>
 <script type="importmap">
 {"imports":{
@@ -15,48 +15,36 @@
 </head>
 <body>
 <div id="app">
-  <div id="viewport">
-    <div id="loading">
-      <div class="spinner"></div>
-      <div>
-        <strong>Echtes MakeHuman-Basemesh wird geladen…</strong>
-        <small>CC0 hm08 · keine Kleidung</small>
-      </div>
-    </div>
-    <div id="badge">BODY LAB · v0.4</div>
+ <div id="viewport">
+  <div id="loading"><div class="spinner"></div><div>
+   <strong>MakeHuman hm08 wird geladen…</strong>
+   <small>danach echte MakeHuman Targets</small>
+  </div></div>
+  <div id="badge">BODY LAB · v0.6 · REAL TARGET TEST</div>
+ </div>
+
+ <section id="sheet">
+  <div id="sheetHandle"><span></span></div>
+  <div id="sheetContent">
+   <header>
+    <div><h1>Körper</h1><p id="targetStatus">Echte MakeHuman-Targets werden geladen…</p></div>
+    <button id="resetBtn">Reset</button>
+   </header>
+
+   <div class="section-title">Makro – vorerst nur Vergleich *</div>
+   <div id="coreControls"></div>
+
+   <div class="section-title realTitle">Echte MakeHuman Morph Targets</div>
+   <div id="realControls"></div>
+
+   <div class="info">
+    <strong>Worauf du achten solltest:</strong> Waist, Hips, Butt, Chest und die Gliedmaßen
+    verändern jetzt die von MakeHuman modellierten Vertexbereiche statt meiner bisherigen
+    geometrischen Masken. Genau diese Qualität entscheidet, ob wir das System weiter ausbauen.
+    <br><br>* Height, Weight und Muscle sind in dieser Testversion noch vereinfachte Vergleichsregler.
+   </div>
   </div>
-
-  <section id="sheet" aria-label="Körpereditor">
-    <div id="sheetHandle"><span></span></div>
-    <div id="sheetContent">
-      <header>
-        <div>
-          <h1>Körper</h1>
-          <p>Parametrische Basis für Harness-Fitting</p>
-        </div>
-        <button id="resetBtn">Reset</button>
-      </header>
-
-      <nav id="presets">
-        <button data-preset="female">Female</button>
-        <button data-preset="neutral" class="active">Neutral</button>
-        <button data-preset="male">Male</button>
-        <button data-preset="curvy">Curvy</button>
-        <button data-preset="muscular">Muscular</button>
-      </nav>
-
-      <div class="section-title">Basis</div>
-      <div id="coreControls"></div>
-      <div class="section-title">Oberkörper</div>
-      <div id="torsoControls"></div>
-      <div class="section-title">Unterkörper & Gliedmaßen</div>
-      <div id="limbControls"></div>
-
-      <div class="info">
-        <strong>Mesh:</strong> MakeHuman hm08 / MPFB2 CC0. Die v0.4-Regler deformieren bereits das echte gemeinsame Basemesh direkt im Browser.
-      </div>
-    </div>
-  </section>
+ </section>
 </div>
 <script type="module" src="./app.js"></script>
 </body>
