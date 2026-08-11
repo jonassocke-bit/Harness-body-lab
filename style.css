@@ -30,3 +30,45 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
 .control.active label{color:#fff;font-weight:650}.control.active{background:rgba(255,255,255,.035);border-radius:7px}
 .note{font-size:10px;line-height:1.5;color:#929298;background:rgba(255,255,255,.035);padding:10px 11px;border-radius:12px;margin:14px 0 25px}.note strong{color:#ccc}
 .hidden{display:none!important}
+
+.controlWrap{display:block}
+.valueBtn{
+  padding:0;
+  background:transparent;
+  color:#999;
+  font-size:9px;
+  font-variant-numeric:tabular-nums;
+  text-align:right;
+  border-radius:6px;
+  min-width:37px;
+  height:26px;
+}
+.valueBtn:not(:disabled){color:#d8d8dc;background:rgba(255,255,255,.055)}
+.valueBtn:disabled{opacity:1}
+.rangeEditor{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:7px;
+  align-items:end;
+  padding:5px 4px 9px 112px;
+}
+.rangeEditor label{
+  font-size:9px;
+  color:#999;
+}
+.rangeEditor input{
+  display:block;
+  width:100%;
+  margin-top:3px;
+  border:1px solid rgba(255,255,255,.1);
+  background:#28282b;
+  color:#fff;
+  border-radius:8px;
+  padding:6px 7px;
+  font:inherit;
+  font-size:11px;
+}
+.rangeEditor button{
+  padding:7px 9px;
+  height:31px;
+}

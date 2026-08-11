@@ -34,23 +34,109 @@ function humanize(s){
   .replace(/\b\w/g,m=>m.toUpperCase());
 }
 function fmt(v){return (v>0?"+":"")+Math.round(v*100)}
-function makeControl(parent,id,label,min,max,value,handler,display=v=>fmt(v)){
- const row=document.createElement("div");row.className="control";row.dataset.search=label.toLowerCase();
- const lab=document.createElement("label");lab.textContent=label;lab.title=label;
- const inp=document.createElement("input");inp.type="range";inp.min=min;inp.max=max;inp.step=.01;inp.value=value;
- const out=document.createElement("output");out.textContent=display(value);
- inp.addEventListener("input",()=>{const v=+inp.value;out.textContent=display(v);row.classList.toggle("active",Math.abs(v-(min===0?0:(min+max)/2))>.01);handler(v)});
- row.append(lab,inp,out);parent.append(row);ui.set(id,{inp,out,row,display,default:value});
+function makeControl(parent,id,label,min,max,value,handler,display=v=>fmt(v),opts={}){
+ const wrap=document.createElement("div");
+ wrap.className="controlWrap";
+ wrap.dataset.search=label.toLowerCase();
+
+ const row=document.createElement("div");
+ row.className="control";
+ const lab=document.createElement("label");
+ lab.textContent=label;
+ lab.title=label;
+
+ const inp=document.createElement("input");
+ inp.type="range";
+ inp.min=min; inp.max=max; inp.step=.01; inp.value=value;
+
+ const out=document.createElement("button");
+ out.type="button";
+ out.className="valueBtn";
+ out.textContent=display(value);
+ out.title=opts.overdrive ? "Antippen: Min/Max ändern" : "Wert";
+
+ row.append(lab,inp,out);
+ wrap.append(row);
+
+ let rangeEditor=null;
+ let minPct=min*100, maxPct=max*100;
+
+ if(opts.overdrive){
+   rangeEditor=document.createElement("div");
+   rangeEditor.className="rangeEditor hidden";
+   rangeEditor.innerHTML=`
+     <label>Min % <input class="minPct" type="number" step="10" value="${Math.round(minPct)}"></label>
+     <label>Max % <input class="maxPct" type="number" step="10" value="${Math.round(maxPct)}"></label>
+     <button type="button" class="rangeDone">OK</button>
+   `;
+   wrap.append(rangeEditor);
+
+   const minEl=rangeEditor.querySelector(".minPct");
+   const maxEl=rangeEditor.querySelector(".maxPct");
+
+   const applyRange=()=>{
+     let mn=Number(minEl.value), mx=Number(maxEl.value);
+     if(!Number.isFinite(mn)) mn=-100;
+     if(!Number.isFinite(mx)) mx=100;
+     if(mn>=mx) mx=mn+10;
+
+     // practical guardrail: still allows strong overdrive without accidental absurd values
+     mn=Math.max(-500,Math.min(0,mn));
+     mx=Math.max(0,Math.min(500,mx));
+
+     minEl.value=Math.round(mn);
+     maxEl.value=Math.round(mx);
+
+     inp.min=mn/100;
+     inp.max=mx/100;
+
+     // Preserve current value if possible; clamp only if now outside new range.
+     let v=Number(inp.value);
+     v=Math.max(Number(inp.min),Math.min(Number(inp.max),v));
+     inp.value=v;
+     handler(v);
+     out.textContent=display(v);
+   };
+
+   out.addEventListener("click",()=>{
+     rangeEditor.classList.toggle("hidden");
+     if(!rangeEditor.classList.contains("hidden")){
+       minEl.focus();
+     }
+   });
+   rangeEditor.querySelector(".rangeDone").addEventListener("click",()=>{
+     applyRange();
+     rangeEditor.classList.add("hidden");
+   });
+   minEl.addEventListener("change",applyRange);
+   maxEl.addEventListener("change",applyRange);
+ } else {
+   out.disabled=true;
+ }
+
+ inp.addEventListener("input",()=>{
+   const v=+inp.value;
+   out.textContent=display(v);
+   row.classList.toggle("active",Math.abs(v-(min===0?0:(min+max)/2))>.01);
+   handler(v);
+ });
+
+ parent.append(wrap);
+ ui.set(id,{
+   inp,out,row,wrap,display,default:value,
+   defaultMin:min,defaultMax:max,
+   rangeEditor
+ });
 }
 
 const core=document.querySelector("#coreControls");
-makeControl(core,"gender","Female ↔ Male",0,1,.5,v=>{state.gender=v;updateBody()},v=>Math.round(v*100));
-makeControl(core,"weight","Weight",0,1,.5,v=>{state.weight=v;updateBody()},v=>Math.round(v*100));
-makeControl(core,"muscle","Muscle",0,1,.5,v=>{state.muscle=v;updateBody()},v=>Math.round(v*100));
-makeControl(core,"height","Height",0,1,.5,v=>{state.height=v;updateBody()},v=>Math.round(v*100));
-makeControl(core,"proportions","Body proportions",0,1,.5,v=>{state.proportions=v;updateBody()},v=>Math.round(v*100));
-makeControl(core,"breastSize","Breast size",0,1,.5,v=>{state.breastSize=v;updateBody()},v=>Math.round(v*100));
-makeControl(core,"breastFirmness","Breast firmness",0,1,.5,v=>{state.breastFirmness=v;updateBody()},v=>Math.round(v*100));
+makeControl(core,"gender","Female ↔ Male",0,1,.5,v=>{state.gender=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"weight","Weight",0,1,.5,v=>{state.weight=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"muscle","Muscle",0,1,.5,v=>{state.muscle=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"height","Height",0,1,.5,v=>{state.height=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"proportions","Body proportions",0,1,.5,v=>{state.proportions=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"breastSize","Breast size",0,1,.5,v=>{state.breastSize=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"breastFirmness","Breast firmness",0,1,.5,v=>{state.breastFirmness=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
 
 const groupsEl=document.querySelector("#groups");
 let directCount=0;
@@ -65,13 +151,20 @@ for(const g of GROUPS){
   directState[c.id]=0;directCount++;
   const label=humanize(c.target);
   const min=c.oneWay?0:-1,max=1,def=0;
-  makeControl(body,c.id,label,min,max,def,v=>{directState[c.id]=v;updateBody()});
+  makeControl(body,c.id,label,min,max,def,v=>{directState[c.id]=v;updateBody()},v=>fmt(v),{overdrive:true});
  }
  groupsEl.append(det);
 }
 document.querySelector("#count").textContent=`${directCount+7} körperrelevante Regler aus MakeHuman`;
 
-function tri(v){return{min:Math.max(0,1-v*2),avg:1-Math.abs(v-.5)*2,max:Math.max(0,v*2-1)}}
+function tri(v){
+ // Native MakeHuman anchors are 0=min, .5=average, 1=max.
+ // Outside 0..1 we extrapolate the nearest endpoint for testing:
+ // e.g. 1.4 => max target at 140% relative to neutral.
+ if(v<0) return {min:1-v,avg:0,max:0};
+ if(v>1) return {min:0,avg:0,max:v};
+ return {min:Math.max(0,1-v*2),avg:1-Math.abs(v-.5)*2,max:Math.max(0,v*2-1)};
+}
 function apply(out,flat,a){
  if(!flat||Math.abs(a)<1e-7)return;
  for(let k=0;k<flat.length;k+=4){
@@ -82,7 +175,13 @@ let body=null,base=null,scaleFactor=1;
 function updateBody(){
  if(!body||!base)return;
  const out=new Float32Array(base);
- const gw={female:1-state.gender,male:state.gender};
+ // Gender: 0=female endpoint, 1=male endpoint, .5=50/50 blend.
+ // Outside the native interval we deliberately extrapolate for testing.
+ // -0.4 = female endpoint overdriven; 1.4 = male endpoint overdriven.
+ let gw;
+ if(state.gender<0) gw={female:1-state.gender,male:0};
+ else if(state.gender>1) gw={female:0,male:state.gender};
+ else gw={female:1-state.gender,male:state.gender};
  const mw=tri(state.muscle),ww=tri(state.weight);
  const mn={min:"minmuscle",avg:"averagemuscle",max:"maxmuscle"};
  const wn={min:"minweight",avg:"averageweight",max:"maxweight"};
@@ -105,7 +204,7 @@ function updateBody(){
  // Breast size/firmness conditioned by female component + Weight/Muscle.
  const cw=tri(state.breastSize),fw=tri(state.breastFirmness);
  const cn={min:"mincup",avg:"averagecup",max:"maxcup"},fn={min:"minfirmness",avg:"averagefirmness",max:"maxfirmness"};
- const female=1-state.gender;
+ const female=state.gender<0 ? 1-state.gender : Math.max(0,1-state.gender);
  if(female>0)for(const m of ["min","avg","max"])for(const w of ["min","avg","max"])for(const c of ["min","avg","max"])for(const f of ["min","avg","max"]){
   const a=female*mw[m]*ww[w]*cw[c]*fw[f];if(a)apply(out,BREAST[`${mn[m]}|${wn[w]}|${cn[c]}|${fn[f]}`],a);
  }
@@ -153,8 +252,14 @@ const search=document.querySelector("#search");
 search.addEventListener("input",()=>{
  const q=search.value.trim().toLowerCase();
  document.querySelectorAll(".group:not(.core)").forEach(g=>{
-  let hits=0;g.querySelectorAll(".control").forEach(r=>{const show=!q||r.dataset.search.includes(q);r.classList.toggle("hidden",!show);if(show)hits++});
-  g.classList.toggle("hidden",!!q&&hits===0);if(q&&hits)g.open=true;
+  let hits=0;
+  g.querySelectorAll(".controlWrap").forEach(r=>{
+    const show=!q||r.dataset.search.includes(q);
+    r.classList.toggle("hidden",!show);
+    if(show)hits++;
+  });
+  g.classList.toggle("hidden",!!q&&hits===0);
+  if(q&&hits)g.open=true;
  });
 });
 let allOpen=false;document.querySelector("#openAll").addEventListener("click",()=>{
@@ -163,7 +268,18 @@ let allOpen=false;document.querySelector("#openAll").addEventListener("click",()
 document.querySelector("#reset").addEventListener("click",()=>{
  Object.assign(state,{gender:.5,weight:.5,muscle:.5,height:.5,proportions:.5,breastSize:.5,breastFirmness:.5});
  for(const k of Object.keys(directState))directState[k]=0;
- for(const [id,q] of ui){q.inp.value=q.default;q.out.textContent=q.display(q.default);q.row.classList.remove("active")}
+ for(const [id,q] of ui){
+   q.inp.min=q.defaultMin;
+   q.inp.max=q.defaultMax;
+   q.inp.value=q.default;
+   q.out.textContent=q.display(q.default);
+   q.row.classList.remove("active");
+   if(q.rangeEditor){
+     q.rangeEditor.querySelector(".minPct").value=Math.round(q.defaultMin*100);
+     q.rangeEditor.querySelector(".maxPct").value=Math.round(q.defaultMax*100);
+     q.rangeEditor.classList.add("hidden");
+   }
+ }
  updateBody();
 });
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);setSheet(sy)}
