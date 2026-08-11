@@ -240,12 +240,45 @@ function frame(){
 }
 init().catch(e=>{document.querySelector("#loading strong").textContent="Ladefehler";document.querySelector("#loading small").textContent=String(e)});
 
-// No snapping: sheet stays exactly where released.
-const sheet=document.querySelector("#sheet"),handle=document.querySelector("#handle");
-let sy=innerHeight*.52,drag=false,startY=0,startSheet=0;
-function setSheet(y){sy=Math.max(innerHeight*.07,Math.min(innerHeight*.88,y));sheet.style.setProperty("--y",sy+"px")}
-setSheet(sy);handle.addEventListener("pointerdown",e=>{drag=true;startY=e.clientY;startSheet=sy;handle.setPointerCapture(e.pointerId)});
-handle.addEventListener("pointermove",e=>{if(drag)setSheet(startSheet+e.clientY-startY)});handle.addEventListener("pointerup",()=>drag=false);handle.addEventListener("pointercancel",()=>drag=false);
+// Robust free-position sheet.
+// We store the TOP edge instead of translating a full-height panel.
+// This means the handle can never be translated outside its own interactive box,
+// and the scroll viewport always extends exactly to the bottom of the screen.
+const sheet=document.querySelector("#sheet"),handle=document.querySelector("#handle"),scrollEl=document.querySelector("#scroll");
+let sheetTop=innerHeight*.52,drag=false,startY=0,startTop=0;
+
+function sheetLimits(){
+  const safeTop=Math.max(8,Math.round(innerHeight*.035));
+  const minVisible=88;
+  return {min:safeTop,max:Math.max(safeTop,innerHeight-minVisible)};
+}
+function setSheetTop(y){
+  const lim=sheetLimits();
+  sheetTop=Math.max(lim.min,Math.min(lim.max,y));
+  sheet.style.setProperty("--sheetTop",sheetTop+"px");
+}
+setSheetTop(sheetTop);
+
+handle.addEventListener("pointerdown",e=>{
+  drag=true;startY=e.clientY;startTop=sheetTop;
+  handle.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+handle.addEventListener("pointermove",e=>{
+  if(!drag)return;
+  setSheetTop(startTop+(e.clientY-startY));
+  e.preventDefault();
+});
+function endSheetDrag(e){
+  drag=false;
+  try{if(e && handle.hasPointerCapture(e.pointerId))handle.releasePointerCapture(e.pointerId)}catch(_){}
+}
+handle.addEventListener("pointerup",endSheetDrag);
+handle.addEventListener("pointercancel",endSheetDrag);
+
+// Extra recovery path for iOS: a new touch on the visible handle always starts from
+// the panel's current actual top, even if a previous pointer sequence was interrupted.
+handle.addEventListener("touchstart",()=>{sheetTop=sheet.getBoundingClientRect().top},{passive:true});
 
 // Search filters controls and auto-opens matching groups.
 const search=document.querySelector("#search");
@@ -265,6 +298,39 @@ search.addEventListener("input",()=>{
 let allOpen=false;document.querySelector("#openAll").addEventListener("click",()=>{
  allOpen=!allOpen;document.querySelectorAll(".group").forEach(g=>g.open=allOpen);document.querySelector("#openAll").textContent=allOpen?"Zu":"Alle";
 });
+// Global range editor. Applies one test range to every slider.
+// For native 0..100 macro sliders a negative global minimum deliberately enables
+// extrapolation, just like the individual overdrive editor.
+document.querySelector("#applyGlobalRange").addEventListener("click",()=>{
+ let mn=Number(document.querySelector("#globalMin").value);
+ let mx=Number(document.querySelector("#globalMax").value);
+ if(!Number.isFinite(mn))mn=-100;
+ if(!Number.isFinite(mx))mx=100;
+ mn=Math.max(-500,Math.min(500,mn));
+ mx=Math.max(-500,Math.min(500,mx));
+ if(mn>=mx)mx=mn+10;
+ document.querySelector("#globalMin").value=Math.round(mn);
+ document.querySelector("#globalMax").value=Math.round(mx);
+
+ for(const [id,q] of ui){
+   q.inp.min=mn/100;
+   q.inp.max=mx/100;
+   let v=Number(q.inp.value);
+   v=Math.max(Number(q.inp.min),Math.min(Number(q.inp.max),v));
+   q.inp.value=v;
+   q.out.textContent=q.display(v);
+
+   if(Object.prototype.hasOwnProperty.call(state,id))state[id]=v;
+   if(Object.prototype.hasOwnProperty.call(directState,id))directState[id]=v;
+
+   if(q.rangeEditor){
+     q.rangeEditor.querySelector(".minPct").value=Math.round(mn);
+     q.rangeEditor.querySelector(".maxPct").value=Math.round(mx);
+   }
+ }
+ updateBody();
+});
+
 document.querySelector("#reset").addEventListener("click",()=>{
  Object.assign(state,{gender:.5,weight:.5,muscle:.5,height:.5,proportions:.5,breastSize:.5,breastFirmness:.5});
  for(const k of Object.keys(directState))directState[k]=0;
@@ -282,5 +348,9 @@ document.querySelector("#reset").addEventListener("click",()=>{
  }
  updateBody();
 });
-function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);setSheet(sy)}
+function resize(){
+ camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight,false);
+ setSheetTop(sheetTop);
+}
 addEventListener("resize",resize);resize();renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera)});

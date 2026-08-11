@@ -72,3 +72,54 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
   padding:7px 9px;
   height:31px;
 }
+
+/* v2.3 robust sheet geometry */
+#sheet{
+  --sheetTop:52vh;
+  top:var(--sheetTop);
+  bottom:0;
+  height:auto;
+  transform:none;
+  min-height:88px;
+  max-height:93dvh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+#handle{
+  flex:0 0 32px;
+  height:32px;
+  min-height:32px;
+  position:relative;
+  z-index:4;
+  background:rgba(20,20,22,.96);
+}
+#scroll{
+  flex:1 1 auto;
+  height:auto;
+  min-height:0;
+  overflow-y:scroll;
+  overflow-x:hidden;
+  padding-bottom:max(120px,calc(60px + env(safe-area-inset-bottom)));
+  touch-action:pan-y;
+}
+.globalRange{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:7px;
+  align-items:end;
+  padding:9px 10px;
+  margin-bottom:8px;
+  border-radius:11px;
+  background:rgba(255,255,255,.045);
+}
+.globalRangeTitle{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}
+.globalRangeTitle span{font-size:11px;font-weight:650}
+.globalRangeTitle small{font-size:9px;color:#888}
+.globalRange label{font-size:9px;color:#999}
+.globalRange input{
+  display:block;width:100%;margin-top:3px;
+  border:1px solid rgba(255,255,255,.1);background:#28282b;color:#fff;
+  border-radius:8px;padding:6px 7px;font:inherit;font-size:11px;
+}
+.globalRange button{height:31px;padding:6px 9px}

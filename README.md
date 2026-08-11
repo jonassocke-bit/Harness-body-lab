@@ -1,4 +1,4 @@
-# Harness Body Lab v2.2 MAX
+# Harness Body Lab v2.3 MAX
 
 This build extracts the body-relevant MakeHuman 1.3.0 modifier catalog instead of hand-picking sliders.
 
@@ -65,3 +65,14 @@ Gender interpretation:
 
 Gender changes the whole conditioned macro body target, not only breasts or genitals.
 Breast-specific female targets are additionally faded toward zero as Gender approaches male.
+
+## v2.3 — global ranges and sheet fixes
+
+- Global Min % / Max % fields apply the same range to every visible parameter at once.
+- Individual parameter ranges can still be edited afterward.
+- The bottom sheet no longer uses a translated 100vh element. Its actual top edge is moved
+  and its bottom is pinned to the viewport, so the drag handle remains recoverable.
+- The inner parameter area uses the remaining real panel height as its scroll viewport.
+  A large bottom padding ensures the final controls can be scrolled fully above the screen edge
+  even when the sheet is short.
+- The sheet still has no snapping and remains exactly where released.
