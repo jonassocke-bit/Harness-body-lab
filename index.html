@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101011">
-<title>Harness Body Lab v2.3 MAX</title>
+<title>Harness Body Lab v2.4</title>
 <link rel="stylesheet" href="./style.css">
 <script type="importmap">
 {"imports":{
@@ -16,7 +16,7 @@
 <body>
 <div id="viewport">
  <div id="loading"><span></span><div><strong>Body Lab MAX lädt…</strong><small>MakeHuman Source 1.3.0</small></div></div>
- <div id="badge">BODY LAB · v2.3 MAX</div>
+ <div id="badge">BODY LAB · v2.4</div>
 </div>
 
 <section id="sheet">
@@ -27,28 +27,43 @@
    <button id="reset">Reset</button>
   </header>
 
-  <div class="searchrow">
-   <input id="search" type="search" placeholder="Parameter suchen …">
-   <button id="openAll">Alle</button>
+  <div class="sectionLabel">AUSGANGSPRESET</div>
+  <div id="presets" class="presetRow">
+   <button data-preset="maleAverage">Male Average</button>
+   <button data-preset="maleSlim">Male Slim</button>
+   <button data-preset="maleMuscular">Male Muscular</button>
+   <button data-preset="femaleAverage">Female Average</button>
+   <button data-preset="femaleCurvy">Female Curvy</button>
+   <button data-preset="neutral" class="active">Neutral</button>
   </div>
 
-  <div class="globalRange">
-   <div class="globalRangeTitle"><span>Globale Slider-Grenzen</span><small>auf alle Regler anwenden</small></div>
-   <label>Min % <input id="globalMin" type="number" step="10" value="-100"></label>
-   <label>Max % <input id="globalMax" type="number" step="10" value="100"></label>
-   <button id="applyGlobalRange" type="button">Anwenden</button>
+  <div class="sectionLabel">BASIS</div>
+  <div class="basicPanel">
+   <div id="coreControls"></div>
   </div>
 
-  <details class="group core" open>
-   <summary><span>Grundkörper · echte Makros</span><b>7</b></summary>
-   <div class="groupbody" id="coreControls"></div>
+  <details id="advanced" class="advanced">
+   <summary><span>Advanced</span><b>142 Detailparameter</b></summary>
+   <div class="advancedBody">
+    <div class="searchrow">
+     <input id="search" type="search" placeholder="Advanced-Parameter suchen …">
+     <button id="openAll">Alle</button>
+    </div>
+
+    <div class="globalRange">
+     <div class="globalRangeTitle"><span>Globale Slider-Grenzen</span><small>auf alle Regler anwenden</small></div>
+     <label>Min % <input id="globalMin" type="number" step="10" value="-100"></label>
+     <label>Max % <input id="globalMax" type="number" step="10" value="100"></label>
+     <button id="applyGlobalRange" type="button">Anwenden</button>
+    </div>
+
+    <div id="groups"></div>
+   </div>
   </details>
 
-  <div id="groups"></div>
-
   <div class="note">
-   <strong>MAX-Test:</strong> Diese Version übernimmt praktisch alle körperrelevanten direkten
-   Modifier aus MakeHumans <code>modeling_modifiers.json</code>, <code>measurement_modifiers.json</code>
+   <strong>Bedienkonzept:</strong> Presets und die sieben MakeHuman-Makros sind die schnelle
+   Ausgangsebene. Unter Advanced bleiben weiterhin praktisch alle körperrelevanten direkten Modifier aus MakeHumans <code>modeling_modifiers.json</code>, <code>measurement_modifiers.json</code>
    und <code>bodyshapes_modifiers.json</code>. Gesicht, Augen, Nase, Mund und Ohren sind absichtlich
    nicht enthalten, weil sie fürs Harness-Fitting keinen Einfluss haben.
    <br><br><strong>Overdrive:</strong> Tippe bei einem Detailregler auf den Prozentwert rechts,

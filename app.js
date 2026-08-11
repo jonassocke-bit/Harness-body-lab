@@ -138,6 +138,44 @@ makeControl(core,"proportions","Body proportions",0,1,.5,v=>{state.proportions=v
 makeControl(core,"breastSize","Breast size",0,1,.5,v=>{state.breastSize=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
 makeControl(core,"breastFirmness","Breast firmness",0,1,.5,v=>{state.breastFirmness=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
 
+// Harness starting presets.
+// These are intentionally parameter presets, not extra morphs: each one sets only the
+// genuine MakeHuman macro controls above. The user can immediately refine them afterward.
+const PRESETS={
+  neutral:{gender:.5,weight:.5,muscle:.5,height:.5,proportions:.5,breastSize:.5,breastFirmness:.5},
+  maleAverage:{gender:1,weight:.5,muscle:.5,height:.58,proportions:.5,breastSize:0,breastFirmness:.5},
+  maleSlim:{gender:1,weight:.24,muscle:.35,height:.62,proportions:.5,breastSize:0,breastFirmness:.5},
+  maleMuscular:{gender:1,weight:.52,muscle:.88,height:.62,proportions:.58,breastSize:0,breastFirmness:.5},
+  femaleAverage:{gender:0,weight:.5,muscle:.42,height:.46,proportions:.5,breastSize:.5,breastFirmness:.5},
+  femaleCurvy:{gender:0,weight:.72,muscle:.30,height:.46,proportions:.48,breastSize:.68,breastFirmness:.42}
+};
+
+function setMacroUI(values){
+  for(const [id,v] of Object.entries(values)){
+    state[id]=v;
+    const q=ui.get(id);
+    if(q){
+      q.inp.value=v;
+      q.out.textContent=q.display(v);
+      q.row.classList.toggle("active",Math.abs(v-.5)>.01);
+    }
+  }
+}
+function applyPreset(name){
+  const p=PRESETS[name];if(!p)return;
+  // Presets define an Ausgangskörper, so clear advanced offsets first.
+  for(const k of Object.keys(directState)) directState[k]=0;
+  for(const [id,q] of ui){
+    if(id.startsWith("d")){
+      q.inp.value=0;q.out.textContent=q.display(0);q.row.classList.remove("active");
+    }
+  }
+  setMacroUI(p);
+  document.querySelectorAll("#presets button").forEach(b=>b.classList.toggle("active",b.dataset.preset===name));
+  updateBody();
+}
+document.querySelectorAll("#presets button").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));
+
 const groupsEl=document.querySelector("#groups");
 let directCount=0;
 for(const g of GROUPS){
@@ -284,7 +322,7 @@ handle.addEventListener("touchstart",()=>{sheetTop=sheet.getBoundingClientRect()
 const search=document.querySelector("#search");
 search.addEventListener("input",()=>{
  const q=search.value.trim().toLowerCase();
- document.querySelectorAll(".group:not(.core)").forEach(g=>{
+ document.querySelectorAll("#groups .group").forEach(g=>{
   let hits=0;
   g.querySelectorAll(".controlWrap").forEach(r=>{
     const show=!q||r.dataset.search.includes(q);
@@ -296,7 +334,7 @@ search.addEventListener("input",()=>{
  });
 });
 let allOpen=false;document.querySelector("#openAll").addEventListener("click",()=>{
- allOpen=!allOpen;document.querySelectorAll(".group").forEach(g=>g.open=allOpen);document.querySelector("#openAll").textContent=allOpen?"Zu":"Alle";
+ allOpen=!allOpen;document.querySelectorAll("#groups .group").forEach(g=>g.open=allOpen);document.querySelector("#openAll").textContent=allOpen?"Zu":"Alle";
 });
 // Global range editor. Applies one test range to every slider.
 // For native 0..100 macro sliders a negative global minimum deliberately enables
@@ -346,6 +384,7 @@ document.querySelector("#reset").addEventListener("click",()=>{
      q.rangeEditor.classList.add("hidden");
    }
  }
+ document.querySelectorAll("#presets button").forEach(b=>b.classList.toggle("active",b.dataset.preset==="neutral"));
  updateBody();
 });
 function resize(){

@@ -1,4 +1,4 @@
-# Harness Body Lab v2.3 MAX
+# Harness Body Lab v2.4
 
 This build extracts the body-relevant MakeHuman 1.3.0 modifier catalog instead of hand-picking sliders.
 
@@ -76,3 +76,33 @@ Breast-specific female targets are additionally faded toward zero as Gender appr
   A large bottom padding ensures the final controls can be scrolled fully above the screen edge
   even when the sheet is short.
 - The sheet still has no snapping and remains exactly where released.
+
+## v2.4 — basic workflow + presets
+
+Research result:
+- The MakeHuman 1.3.0 source archive contains no bundled `.mhm` standard-body preset library.
+- MHM is a text-based saved character configuration format, so presets are fundamentally parameter sets.
+- The official MakeHuman main body controls are Gender, Age, Muscle, Weight, Height and Proportions,
+  with breast size / firmness as additional macro controls.
+
+Therefore v2.4 adds Harness starting presets built ONLY from the genuine MakeHuman macro controls:
+- Male Average
+- Male Slim
+- Male Muscular
+- Female Average
+- Female Curvy
+- Neutral
+
+These are not claimed as official MakeHuman presets. They are convenience starting configurations.
+Selecting a preset clears Advanced offsets, then sets the native MakeHuman macro parameters.
+
+All 142 direct body modifiers remain available under a collapsed Advanced section with search,
+groups, individual overdrive, and global range editing.
+
+The supplied MakeHuman 1.3.0 source archive also contains:
+- `data/rigs/default.mhskel`
+- `data/rigs/default_weights.mhw`
+- `data/poses/tpose.bvh`
+- animation/pose BVHs including walk and dance examples
+
+These are the basis for a later proper Three.js SkinnedMesh pose implementation.
