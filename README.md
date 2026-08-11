@@ -1,42 +1,32 @@
-# Harness Body Lab v1.1
+# Harness Body Lab v2 MAX
 
-Flat GitHub Pages build. Upload these files to the repository root:
+This build extracts the body-relevant MakeHuman 1.3.0 modifier catalog instead of hand-picking sliders.
 
+## Included
+- 7 core controls: Gender, Weight, Muscle, Height, Body Proportions, Breast Size, Breast Firmness
+- 142 direct body modifiers from the official MakeHuman JSON definitions
+- Groups: neck, torso, hip, stomach, buttocks, pelvis, armslegs, breast, genitals, measurements, body shapes
+
+Total visible controls: 149
+
+Face/head/eyes/nose/mouth/ears are deliberately excluded because they do not affect harness fitting.
+They can be added later from the same source data without changing the engine.
+
+## UI
+- Bottom sheet does not snap; it remains exactly where released.
+- Sheet content scrolls independently.
+- Groups are collapsible.
+- Search filters parameters and automatically opens matching groups.
+
+## Files
+Upload all flat files to the GitHub repository root:
 - index.html
 - style.css
 - app.js
-- morph-data.js
 - base.obj
+- modifier-config.js
+- labels.js
+- body-morphs.js
+- macro-morphs.js
 
-## Morph system
-The adult body macro uses 18 genuine MakeHuman `macrodetails/universal-*young*`
-targets and trilinear blending across:
-- female ↔ male
-- min / average / max muscle
-- min / average / max weight
-
-Fine controls use genuine MakeHuman detail/measure targets.
-
-`Proportionen koppeln` is an additional Harness Body Lab convenience layer. Its neighbour
-correlation coefficients are heuristic and deliberately modest. It can be disabled or its
-strength changed. The whole-body Weight/Muscle/Gender correlation itself is MakeHuman data.
-
-## UI
-The bottom sheet does not snap. Drag the handle and release it anywhere; it stays at the
-release position. The contents inside the sheet scroll independently.
-
-## v1.1 breast and gender fix
-
-`Bust / Chest` was a circumference measurement target and therefore enlarged the entire
-thorax. It has been renamed to `Chest circumference`.
-
-Two genuine MakeHuman breast controls are now included:
-- Breast size (mincup / averagecup / maxcup)
-- Breast firmness (minfirmness / averagefirmness / maxfirmness)
-
-The full adult-young female breast grid is blended against current Weight and Muscle.
-MakeHuman has no file for averagecup + averagefirmness because that combination is the
-neutral zero-delta state; v1.1 handles it as an empty target.
-
-Breast target influence is multiplied by the female component of the Gender slider.
-At fully Male, breast-specific targets contribute zero.
+All MakeHuman mesh/target data in this test comes from the user-supplied MakeHuman v1.3.0 source archive.
