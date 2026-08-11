@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { MACRO, DETAIL } from "./morph-data.js";
+import { MACRO, DETAIL, BREAST } from "./morph-data.js";
 
 const N=13380;
 const scene=new THREE.Scene();
@@ -28,7 +28,9 @@ const defs=[
  {id:"height",label:"Height",group:"macro",min:.88,max:1.12,value:1,display:v=>Math.round(v*182)},
 
  {id:"shoulders",label:"Shoulders",group:"torso"},{id:"vshape",label:"V-Shape",group:"torso"},
- {id:"bust",label:"Bust / Chest",group:"torso"},{id:"underbust",label:"Underbust",group:"torso"},
+ {id:"breastSize",label:"Breast size",group:"torso",min:0,max:1,value:.5,display:v=>Math.round(v*100)},
+ {id:"breastFirmness",label:"Breast firmness",group:"torso",min:0,max:1,value:.5,display:v=>Math.round(v*100)},
+ {id:"bust",label:"Chest circumference",group:"torso"},{id:"underbust",label:"Underbust",group:"torso"},
  {id:"waist",label:"Waist",group:"torso"},
 
  {id:"hips",label:"Hips",group:"leg"},{id:"butt",label:"Butt",group:"leg"},
@@ -108,6 +110,27 @@ function updateBody(){
     const a=gw[sex]*mw[m]*ww[w];
     if(a<=0)continue;
     applyFlat(out,MACRO[`${sex}|${muscleNames[m]}|${weightNames[w]}`],a);
+   }
+  }
+ }
+
+ // MakeHuman breast system. Only the female component contributes these targets.
+ // At Gender=Male the breast-specific morph therefore fades completely out.
+ const cw=triWeights(state.breastSize);
+ const fw=triWeights(state.breastFirmness);
+ const cupNames={min:"mincup",avg:"averagecup",max:"maxcup"};
+ const firmNames={min:"minfirmness",avg:"averagefirmness",max:"maxfirmness"};
+ const femaleAmount=1-state.gender;
+ if(femaleAmount>0.0001){
+  for(const m of ["min","avg","max"]){
+   for(const w of ["min","avg","max"]){
+    for(const c of ["min","avg","max"]){
+     for(const f of ["min","avg","max"]){
+      const a=femaleAmount*mw[m]*ww[w]*cw[c]*fw[f];
+      if(a<=0)continue;
+      applyFlat(out,BREAST[`${muscleNames[m]}|${weightNames[w]}|${cupNames[c]}|${firmNames[f]}`],a);
+     }
+    }
    }
   }
  }
