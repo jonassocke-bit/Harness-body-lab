@@ -114,37 +114,62 @@ handle.addEventListener("pointerup",e=>{
 });
 handle.addEventListener("dblclick",()=>setSheet(sheetY<innerHeight*.3?innerHeight*.48:minY,true));
 
-// ---------- OBJ parser; strips MakeHuman helper/joint geometry ----------
+// ---------- OBJ parser ----------
 function parseBodyOBJ(text){
- const verts=[[0,0,0]];
+ const rawVerts=[[0,0,0]];
  const uv=[[0,0]];
- const positions=[],uvs=[];
+ const faces=[];
  let group="body";
+
  const keepGroup=()=>!(group.startsWith("helper-")||group.startsWith("joint-"));
+
  for(const raw of text.split(/\r?\n/)){
   const line=raw.trim(); if(!line||line[0]==="#")continue;
   const p=line.split(/\s+/);
-  if(p[0]==="v") verts.push([+p[1],+p[2],+p[3]]);
+  if(p[0]==="v") rawVerts.push([+p[1],+p[2],+p[3]]);
   else if(p[0]==="vt") uv.push([+p[1],+p[2]]);
   else if(p[0]==="g"||p[0]==="o") group=(p[1]||"").toLowerCase();
   else if(p[0]==="f" && keepGroup()){
    const refs=p.slice(1).map(s=>s.split("/").map(Number));
-   for(let k=1;k<refs.length-1;k++){
-    for(const ref of [refs[0],refs[k],refs[k+1]]){
-     let vi=ref[0]; if(vi<0)vi=verts.length+vi;
-     const v=verts[vi];
-     // MakeHuman: Z up. Convert to Three.js Y-up and invert depth.
-     positions.push(v[0],v[2],-v[1]);
-     if(ref[1] && uv[ref[1]])uvs.push(uv[ref[1]][0],uv[ref[1]][1]);
-     else uvs.push(0,0);
-    }
-   }
+   for(let k=1;k<refs.length-1;k++) faces.push([refs[0],refs[k],refs[k+1]]);
   }
  }
+
+ // Detect the anatomical UP axis from the raw basemesh rather than assuming OBJ convention.
+ // MakeHuman's vertical axis is strongly offset from zero (feet -> head), while width/depth
+ // are approximately centred around zero. This also prevents the previous "lying body" bug.
+ const mins=[Infinity,Infinity,Infinity], maxs=[-Infinity,-Infinity,-Infinity];
+ for(let i=1;i<rawVerts.length;i++){
+  const v=rawVerts[i];
+  for(let a=0;a<3;a++){mins[a]=Math.min(mins[a],v[a]);maxs[a]=Math.max(maxs[a],v[a]);}
+ }
+ const ranges=maxs.map((m,a)=>m-mins[a]);
+ const mids=maxs.map((m,a)=>(m+mins[a])/2);
+ let upAxis=[0,1,2].reduce((best,a)=>Math.abs(mids[a])>Math.abs(mids[best])?a:best,0);
+ const horizontal=[0,1,2].filter(a=>a!==upAxis);
+ // Of the two centred axes, the larger extent is anatomical left/right, the smaller is depth.
+ const widthAxis=ranges[horizontal[0]]>=ranges[horizontal[1]]?horizontal[0]:horizontal[1];
+ const depthAxis=horizontal.find(a=>a!==widthAxis);
+
+ const positions=[],uvs=[];
+ function mapped(ref){
+  let vi=ref[0]; if(vi<0)vi=rawVerts.length+vi;
+  const v=rawVerts[vi];
+  return [v[widthAxis], v[upAxis], v[depthAxis]];
+ }
+ for(const tri of faces){
+  for(const ref of tri){
+   const v=mapped(ref); positions.push(v[0],v[1],v[2]);
+   if(ref[1] && uv[ref[1]]) uvs.push(uv[ref[1]][0],uv[ref[1]][1]);
+   else uvs.push(0,0);
+  }
+ }
+
  const g=new THREE.BufferGeometry();
  g.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
  g.setAttribute("uv",new THREE.Float32BufferAttribute(uvs,2));
  g.computeVertexNormals();
+ g.userData.axisInfo={upAxis,widthAxis,depthAxis,ranges,mids};
  return g;
 }
 
@@ -186,83 +211,102 @@ function updateBody(){
  const p=body.geometry.attributes.position;
  const out=new Float32Array(base.length);
  const s=state;
+
+ // Spatial torso boundary. The hm08 basemesh is in a T/A pose, so HEIGHT alone cannot
+ // distinguish shoulders from arms/hands. These masks always require proximity to torso.
+ const torsoHalf=.34;
+ const innerTorsoHalf=.29;
+
  for(let i=0;i<base.length;i+=3){
   let x=base[i], y=base[i+1], z=base[i+2];
-  const t=y/rawHeight; // 0 feet -> 1 head
+  const t=y/rawHeight;
   const ax=Math.abs(x);
 
-  // Global body mass. Focus torso + limbs, avoid distorting head/hands/feet aggressively.
-  const torsoMask=smoothstep(.38,.48,t)*(1-smoothstep(.86,.94,t));
-  const legMask=smoothstep(.05,.14,t)*(1-smoothstep(.52,.60,t));
-  const armSide=smoothstep(.23,.36,ax)*smoothstep(.48,.58,t)*(1-smoothstep(.83,.90,t));
-  const massMask=Math.max(torsoMask*.95,legMask*.55,armSide*.6);
+  const torsoSpatial=1-smoothstep(torsoHalf,torsoHalf+.10,ax);
+  const innerTorso=1-smoothstep(innerTorsoHalf,innerTorsoHalf+.08,ax);
+  const pelvisSpatial=1-smoothstep(.38,.50,ax);
+
+  // Body mass: torso, pelvis and limb thickness separately so hands/feet stay stable.
+  const torsoMask=smoothstep(.40,.48,t)*(1-smoothstep(.86,.93,t))*torsoSpatial;
+  const pelvisMask=bell(t,.48,.12)*pelvisSpatial;
+  const legMask=smoothstep(.08,.14,t)*(1-smoothstep(.50,.57,t));
+  const armMask=smoothstep(.34,.43,ax)*smoothstep(.49,.58,t)*(1-smoothstep(.82,.89,t))
+                *(1-smoothstep(.70,.92,ax)); // fades out before wrists/hands
+  const massMask=Math.max(torsoMask,pelvisMask*.9,legMask*.45,armMask*.45);
   const weight=s.weight;
-  let radial=1+weight*.12*massMask;
-  x*=radial; z*=1+weight*.10*massMask;
+  x*=1+weight*.11*massMask;
+  z*=1+weight*.10*massMask;
 
-  // Gender: wider male shoulder/chest; wider female pelvis/thigh root.
-  x*=1+s.gender*( .085*bell(t,.75,.10) - .065*bell(t,.51,.085) );
-  z*=1+s.gender*( .035*bell(t,.70,.14) - .025*bell(t,.52,.10) );
+  // Gender - only anatomical torso/pelvis zones, never hands.
+  const maleShoulder=s.gender*.075*bell(t,.76,.11)*torsoSpatial;
+  const malePelvis=-s.gender*.055*bell(t,.50,.09)*pelvisSpatial;
+  x*=1+maleShoulder+malePelvis;
+  z*=1+s.gender*.030*bell(t,.70,.14)*torsoSpatial-s.gender*.020*bell(t,.51,.10)*pelvisSpatial;
 
-  // Shoulders
-  x*=1+s.shoulders*.14*bell(t,.78,.075);
+  // SHOULDERS: clavicle/upper torso only. Previous version affected all vertices at
+  // shoulder height, including hands in T-pose. The x-bound mask fixes that.
+  const shoulderM=bell(t,.78,.075)*torsoSpatial;
+  x*=1+s.shoulders*.145*shoulderM;
+  z*=1+s.shoulders*.025*shoulderM;
 
-  // Chest circumference/depth
-  const chestM=bell(t,.70,.105);
+  // Chest
+  const chestM=bell(t,.70,.105)*innerTorso;
   x*=1+s.chest*.095*chestM;
   z*=1+s.chest*.13*chestM;
 
-  // Breast projection: front is +z or -z depends base; use bilateral depth magnitude with female bias.
-  const breastM=bell(t,.70,.065)*smoothstep(.035,.12,ax)*(1-smoothstep(.28,.38,ax));
-  const frontSign=z>=0?1:-1;
-  z += frontSign*s.breast*.075*breastM*(.85-.25*s.gender);
+  // Breast / front-back projection; torso only
+  const breastM=bell(t,.70,.065)*innerTorso*smoothstep(.035,.12,ax);
+  z += (z>=0?1:-1)*s.breast*.070*breastM*(.85-.25*s.gender);
 
   // Waist
-  const waistM=bell(t,.59,.075);
+  const waistM=bell(t,.59,.070)*innerTorso;
   x*=1+s.waist*.15*waistM;
   z*=1+s.waist*.11*waistM;
 
-  // Belly projection / circumference
-  const bellyM=bell(t,.57,.10);
-  x*=1+s.belly*.07*bellyM;
-  z += (z>=0?1:-1)*s.belly*.065*bellyM;
+  // Belly
+  const bellyM=bell(t,.57,.10)*innerTorso;
+  x*=1+s.belly*.065*bellyM;
+  z += (z>=0?1:-1)*s.belly*.060*bellyM;
 
-  // Hips/pelvis width
-  const hipM=bell(t,.48,.075);
+  // Hips/pelvis
+  const hipM=bell(t,.48,.075)*pelvisSpatial;
   x*=1+s.hips*.17*hipM;
   z*=1+s.hips*.08*hipM;
 
-  // Butt depth around posterior pelvis (symmetric depth fallback but strongest outward)
-  const buttM=bell(t,.46,.07);
-  z += (z>=0?1:-1)*s.butt*.075*buttM;
+  // Butt
+  const buttM=bell(t,.46,.07)*pelvisSpatial;
+  z += (z>=0?1:-1)*s.butt*.072*buttM;
 
-  // thighs and calves
+  // Legs: use local leg centres to avoid pulling both legs away from centre.
   const thighM=bell(t,.35,.11), calfM=bell(t,.17,.085);
-  // scale x relative to approximate limb centers rather than whole body center
-  const legCenter=(x<0?-0.105:0.105);
-  x=legCenter+(x-legCenter)*(1+s.thighs*.13*thighM+s.calves*.12*calfM);
-  z*=1+s.thighs*.09*thighM+s.calves*.09*calfM;
+  const legCentre=(x<0?-0.105:0.105);
+  const legRegion=(ax<.35)?1:0;
+  if(legRegion){
+   x=legCentre+(x-legCentre)*(1+s.thighs*.13*thighM+s.calves*.12*calfM);
+   z*=1+s.thighs*.09*thighM+s.calves*.09*calfM;
+  }
 
-  // arms/muscle
-  const armM=armSide;
-  x*=1+s.arms*.045*armM+s.muscle*.035*armM;
-  z*=1+s.arms*.09*armM+s.muscle*.07*armM;
-  x*=1+s.muscle*.06*bell(t,.74,.13);
-  z*=1+s.muscle*.05*bell(t,.72,.13);
+  // Arms: thickness only, fade to zero toward hands.
+  x*=1+s.arms*.035*armMask+s.muscle*.025*armMask;
+  z*=1+s.arms*.085*armMask+s.muscle*.060*armMask;
 
-  // Body proportions: leg length vs torso; height: actual global size
+  // Torso muscle
+  x*=1+s.muscle*.055*bell(t,.74,.13)*torsoSpatial;
+  z*=1+s.muscle*.050*bell(t,.72,.13)*torsoSpatial;
+
+  // Proportions + height
   const prop=s.proportions;
   if(t<.50) y*=1+prop*.075;
   else y += rawHeight*.50*prop*.075 + (y-rawHeight*.50)*(1-prop*.035);
-  const hScale=1+s.height*.105;
-  y*=hScale;
+  y*=1+s.height*.105;
 
-  out[i]=x;out[i+1]=y;out[i+2]=z;
+  out[i]=x; out[i+1]=y; out[i+2]=z;
  }
  p.array.set(out);p.needsUpdate=true;
  body.geometry.computeVertexNormals();
  body.geometry.computeBoundingSphere();
 }
+
 loadBody();
 
 function resize(){
