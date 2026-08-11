@@ -1,53 +1,35 @@
 :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body,#app{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0d0e;color:#f5f5f5}
-#viewport{position:absolute;inset:0;background:
-radial-gradient(ellipse at 50% 34%,#343436 0%,#1b1b1d 42%,#0d0d0e 78%);overflow:hidden}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0d0f;color:#f5f5f5}
+#viewport{position:absolute;inset:0;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#343438 0,#1a1a1d 45%,#0d0d0f 82%)}
 canvas{display:block;width:100%;height:100%;touch-action:none}
-#loading{position:absolute;z-index:5;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);
-display:flex;align-items:center;gap:11px;padding:10px 14px;border-radius:15px;
-background:rgba(13,13,14,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-box-shadow:0 8px 30px rgba(0,0,0,.25);white-space:nowrap}
-#loading.hidden{opacity:0;pointer-events:none;transition:opacity .35s}
-#loading strong{display:block;font-size:12px;font-weight:650}
-#loading small{display:block;font-size:10px;color:#aaa;margin-top:2px}
-.spinner{width:18px;height:18px;border-radius:50%;border:2px solid #555;border-top-color:#fff;animation:spin .8s linear infinite}
+#version{position:absolute;left:14px;top:max(14px,env(safe-area-inset-top));font-size:9px;letter-spacing:.15em;color:#aaa;background:rgba(0,0,0,.25);padding:7px 9px;border-radius:9px}
+#status{position:absolute;top:max(15px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:10px;background:rgba(14,14,16,.76);backdrop-filter:blur(16px);padding:10px 13px;border-radius:14px;white-space:nowrap}
+#status strong,#status small{display:block}
+#status strong{font-size:11px}
+#status small{font-size:9px;color:#aaa;margin-top:2px}
+#status.ok{opacity:0;pointer-events:none;transition:opacity .4s}
+#status.error{background:rgba(58,24,24,.9)}
+.dot{width:14px;height:14px;border:2px solid #666;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+.error .dot{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
-#badge{position:absolute;left:12px;top:max(14px,env(safe-area-inset-top));font-size:9px;letter-spacing:.12em;
-color:#aaa;padding:6px 8px;border-radius:9px;background:rgba(0,0,0,.22);pointer-events:none;opacity:.8}
 
-#sheet{
- --sheet-y:48vh;
- position:absolute;z-index:10;left:0;right:0;top:0;height:100dvh;
- transform:translateY(var(--sheet-y));
- background:rgba(20,20,21,.79);
- border-top:1px solid rgba(255,255,255,.11);
- border-radius:24px 24px 0 0;
- box-shadow:0 -16px 45px rgba(0,0,0,.25);
- backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%);
- will-change:transform;
-}
-#sheetHandle{height:29px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab}
-#sheetHandle span{width:43px;height:5px;border-radius:10px;background:#888}
-#sheetContent{height:calc(100dvh - 29px);overflow-y:auto;overscroll-behavior:contain;
-padding:0 15px calc(90px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:3px 0 9px}
-h1{font-size:23px;line-height:1;margin:0 0 5px;letter-spacing:-.03em}
-header p{margin:0;font-size:11.5px;color:#aaa}
-button{font:inherit;color:#eee;background:#343436;border:0;border-radius:11px;padding:8px 11px;font-weight:620}
-button:active{transform:scale(.97)}
-#resetBtn{font-size:12px;padding:8px 12px}
-#presets{display:flex;gap:7px;overflow-x:auto;padding:5px 0 13px;scrollbar-width:none}
-#presets::-webkit-scrollbar{display:none}
-#presets button{font-size:11.5px;white-space:nowrap;padding:8px 12px;background:#303032}
-#presets button.active{background:#ededed;color:#111}
-.section-title{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:#777;margin:9px 0 5px}
-.control{display:grid;grid-template-columns:92px 1fr 39px;align-items:center;gap:8px;height:35px}
-.control label{font-size:12.5px;color:#e6e6e6;white-space:nowrap}
-.control output{text-align:right;font-size:10.5px;color:#9b9b9f;font-variant-numeric:tabular-nums}
-input[type=range]{width:100%;margin:0;height:28px;background:transparent}
-input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:4px;background:#555}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#f6f6f6;
-margin-top:-7.5px;box-shadow:0 1px 6px rgba(0,0,0,.35)}
-.info{font-size:10.5px;line-height:1.45;color:#858589;margin:14px 0 20px;padding:10px 11px;border-radius:12px;background:rgba(255,255,255,.035)}
-.info strong{color:#aaa}
+#sheet{--y:67vh;position:absolute;z-index:10;left:0;right:0;top:0;height:100dvh;transform:translateY(var(--y));background:rgba(20,20,22,.82);border-top:1px solid rgba(255,255,255,.12);border-radius:24px 24px 0 0;backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%)}
+#handle{height:30px;display:flex;justify-content:center;align-items:center;touch-action:none}
+#handle span{width:43px;height:5px;border-radius:8px;background:#8b8b8e}
+#content{height:calc(100dvh - 30px);overflow:auto;padding:0 16px calc(80px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:4px 0 12px}
+h1{font-size:21px;margin:0 0 4px}
+header p{font-size:11px;color:#aaa;margin:0}
+button{border:0;border-radius:11px;background:#343438;color:#eee;padding:8px 12px;font:inherit;font-size:12px;font-weight:600}
+.compare{display:flex;gap:7px;margin-bottom:13px}
+.compare button{flex:1}
+.compare button.active{background:#eee;color:#111}
+.section{font-size:9px;letter-spacing:.14em;color:#818186;margin:7px 0 5px}
+.control{display:grid;grid-template-columns:90px 1fr 42px;gap:9px;align-items:center;height:42px}
+.control label{font-size:13px;display:flex;align-items:center;gap:5px}
+.control label em{font-style:normal;font-size:7px;background:rgba(255,255,255,.14);padding:3px 4px;border-radius:5px;letter-spacing:.08em}
+.control output{text-align:right;color:#aaa;font-size:11px;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%}
+.note{margin-top:13px;font-size:10.5px;line-height:1.5;color:#98989d;background:rgba(255,255,255,.04);padding:10px 11px;border-radius:12px}
+.note strong{color:#ccc}

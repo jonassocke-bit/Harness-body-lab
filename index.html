@@ -1,63 +1,68 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
-<meta name="theme-color" content="#111111"/>
-<title>Harness Body Lab v2</title>
-<link rel="stylesheet" href="./style.css"/>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#101011">
+<title>Harness Body Quality Test</title>
+<link rel="stylesheet" href="./style.css">
 <script type="importmap">
-{"imports":{
-"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-}}
+{
+  "imports":{
+    "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
 </script>
 </head>
 <body>
-<div id="app">
-  <div id="viewport">
-    <div id="loading">
-      <div class="spinner"></div>
-      <div>
-        <strong>Echtes MakeHuman-Basemesh wird geladen…</strong>
-        <small>CC0 hm08 · keine Kleidung</small>
-      </div>
+<div id="viewport">
+  <div id="status" class="loading">
+    <span class="dot"></span>
+    <div>
+      <strong>Quality Test wird geladen…</strong>
+      <small>hm08 Body + echte Taille/Hüfte Targets</small>
     </div>
-    <div id="badge">BODY LAB · v0.7.1</div>
   </div>
-
-  <section id="sheet" aria-label="Körpereditor">
-    <div id="sheetHandle"><span></span></div>
-    <div id="sheetContent">
-      <header>
-        <div>
-          <h1>Körper</h1>
-          <p>Parametrische Basis für Harness-Fitting</p>
-        </div>
-        <button id="resetBtn">Reset</button>
-      </header>
-
-      <nav id="presets">
-        <button data-preset="female">Female</button>
-        <button data-preset="neutral" class="active">Neutral</button>
-        <button data-preset="male">Male</button>
-        <button data-preset="curvy">Curvy</button>
-        <button data-preset="muscular">Muscular</button>
-      </nav>
-
-      <div class="section-title">Basis</div>
-      <div id="coreControls"></div>
-      <div class="section-title">Oberkörper</div>
-      <div id="torsoControls"></div>
-      <div class="section-title">Unterkörper & Gliedmaßen</div>
-      <div id="limbControls"></div>
-
-      <div class="info">
-        <strong>Mesh:</strong> MakeHuman hm08 / MPFB2 CC0. Die v0.7.1-Regler deformieren bereits das echte gemeinsame Basemesh direkt im Browser.
-      </div>
-    </div>
-  </section>
+  <div id="version">QUALITY TEST · v1</div>
 </div>
+
+<section id="sheet">
+  <div id="handle"><span></span></div>
+  <div id="content">
+    <header>
+      <div>
+        <h1>Body Quality Test</h1>
+        <p id="targetState">Mesh wird geladen…</p>
+      </div>
+      <button id="reset">Reset</button>
+    </header>
+
+    <div class="compare">
+      <button data-view="front" class="active">Front</button>
+      <button data-view="side">Side</button>
+      <button data-view="back">Back</button>
+    </div>
+
+    <div class="section">ECHTE MAKEHUMAN TARGETS</div>
+    <div class="control">
+      <label for="waist">Taille <em>REAL</em></label>
+      <input id="waist" type="range" min="-1" max="1" step=".01" value="0">
+      <output id="waistOut">0</output>
+    </div>
+    <div class="control">
+      <label for="hips">Hüfte <em>REAL</em></label>
+      <input id="hips" type="range" min="-1" max="1" step=".01" value="0">
+      <output id="hipsOut">0</output>
+    </div>
+
+    <div class="note">
+      <strong>Nur diese zwei Regler zählen.</strong> Keine approximierten Body-Slider, keine Presets.
+      Wenn Taille und Hüfte hier natürlich aussehen, lohnt sich der vollständige MakeHuman-Ausbau.
+    </div>
+  </div>
+</section>
+
 <script type="module" src="./app.js"></script>
 </body>
 </html>
