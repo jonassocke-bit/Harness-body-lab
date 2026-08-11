@@ -1,36 +1,27 @@
 :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0d0f;color:#f5f5f5}
-#viewport{position:absolute;inset:0;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#343438 0,#1a1a1d 45%,#0d0d0f 82%)}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0d0f;color:#f4f4f5}
+#viewport{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,#343438 0,#1a1a1d 46%,#0d0d0f 82%);overflow:hidden}
 canvas{display:block;width:100%;height:100%;touch-action:none}
-#version{position:absolute;left:14px;top:max(14px,env(safe-area-inset-top));font-size:9px;letter-spacing:.15em;color:#aaa;background:rgba(0,0,0,.25);padding:7px 9px;border-radius:9px}
-#status{position:absolute;top:max(15px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:10px;background:rgba(14,14,16,.76);backdrop-filter:blur(16px);padding:10px 13px;border-radius:14px;white-space:nowrap}
-#status strong,#status small{display:block}
-#status strong{font-size:11px}
-#status small{font-size:9px;color:#aaa;margin-top:2px}
-#status.ok{opacity:0;pointer-events:none;transition:opacity .4s}
-#status.error{background:rgba(58,24,24,.9)}
-.dot{width:14px;height:14px;border:2px solid #666;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
-.error .dot{display:none}
-@keyframes spin{to{transform:rotate(360deg)}}
+#badge{position:absolute;top:max(14px,env(safe-area-inset-top));left:13px;font-size:9px;letter-spacing:.14em;color:#999;background:rgba(0,0,0,.25);padding:6px 8px;border-radius:9px}
+#loading{position:absolute;z-index:5;top:max(15px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;background:rgba(15,15,17,.76);backdrop-filter:blur(16px);padding:9px 12px;border-radius:13px}
+#loading>span{width:15px;height:15px;border:2px solid #555;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+#loading strong,#loading small{display:block;white-space:nowrap}#loading strong{font-size:11px}#loading small{font-size:9px;color:#999}
+#loading.done{opacity:0;pointer-events:none;transition:opacity .35s}@keyframes spin{to{transform:rotate(360deg)}}
 
-#sheet{--y:67vh;position:absolute;z-index:10;left:0;right:0;top:0;height:100dvh;transform:translateY(var(--y));background:rgba(20,20,22,.82);border-top:1px solid rgba(255,255,255,.12);border-radius:24px 24px 0 0;backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%)}
-#handle{height:30px;display:flex;justify-content:center;align-items:center;touch-action:none}
-#handle span{width:43px;height:5px;border-radius:8px;background:#8b8b8e}
-#content{height:calc(100dvh - 30px);overflow:auto;padding:0 16px calc(80px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:4px 0 12px}
-h1{font-size:21px;margin:0 0 4px}
-header p{font-size:11px;color:#aaa;margin:0}
-button{border:0;border-radius:11px;background:#343438;color:#eee;padding:8px 12px;font:inherit;font-size:12px;font-weight:600}
-.compare{display:flex;gap:7px;margin-bottom:13px}
-.compare button{flex:1}
-.compare button.active{background:#eee;color:#111}
-.section{font-size:9px;letter-spacing:.14em;color:#818186;margin:7px 0 5px}
-.control{display:grid;grid-template-columns:90px 1fr 42px;gap:9px;align-items:center;height:42px}
-.control label{font-size:13px;display:flex;align-items:center;gap:5px}
-.control label em{font-style:normal;font-size:7px;background:rgba(255,255,255,.14);padding:3px 4px;border-radius:5px;letter-spacing:.08em}
-.control output{text-align:right;color:#aaa;font-size:11px;font-variant-numeric:tabular-nums}
-input[type=range]{width:100%}
-.note{margin-top:13px;font-size:10.5px;line-height:1.5;color:#98989d;background:rgba(255,255,255,.04);padding:10px 11px;border-radius:12px}
-.note strong{color:#ccc}
-code{font-size:10px}
+#sheet{--y:54vh;position:absolute;z-index:10;left:0;right:0;top:0;height:100dvh;transform:translateY(var(--y));background:rgba(20,20,22,.82);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%);border-top:1px solid rgba(255,255,255,.12);border-radius:24px 24px 0 0}
+#handle{height:30px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab}
+#handle span{width:43px;height:5px;border-radius:8px;background:#888}
+#scroll{height:calc(100dvh - 30px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 15px calc(90px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:4px 0 10px}
+h1{font-size:21px;margin:0 0 3px}header p{margin:0;color:#999;font-size:11px}
+button{border:0;border-radius:10px;background:#343438;color:#eee;padding:8px 11px;font:inherit;font-size:12px;font-weight:600}
+.section{font-size:9px;letter-spacing:.14em;color:#777;margin:12px 0 4px;border-top:1px solid rgba(255,255,255,.055);padding-top:9px}
+.control{display:grid;grid-template-columns:100px 1fr 38px;gap:8px;align-items:center;height:36px}
+.control.compact{margin-top:4px}
+.control label{font-size:12px;color:#e7e7e8}.control output{text-align:right;color:#999;font-size:10px;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;margin:0} input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:5px;background:#555}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#f2f2f2;margin-top:-7.5px}
+.toggleRow{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);padding:9px 10px;border-radius:11px;font-size:12px}
+.toggleRow label{display:flex;align-items:center;gap:8px}.toggleRow span{font-size:10px;color:#999}
+.note{font-size:10.5px;line-height:1.5;color:#939398;background:rgba(255,255,255,.035);padding:10px 11px;border-radius:12px;margin:14px 0 25px}.note strong{color:#ccc}

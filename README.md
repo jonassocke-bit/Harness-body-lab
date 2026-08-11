@@ -1,23 +1,26 @@
-# Harness Body Quality Test — local MakeHuman v2
+# Harness Body Lab v1
 
-Upload ALL files directly into the root of the GitHub Pages repository:
+Flat GitHub Pages build. Upload these files to the repository root:
 
 - index.html
 - style.css
 - app.js
+- morph-data.js
 - base.obj
-- waist-decr.target
-- waist-incr.target
-- hips-decr.target
-- hips-incr.target
 
-Everything relevant to the body test is local now. No Git LFS, no GitHub Media endpoint,
-no external body/target runtime downloads.
+## Morph system
+The adult body macro uses 18 genuine MakeHuman `macrodetails/universal-*young*`
+targets and trilinear blending across:
+- female ↔ male
+- min / average / max muscle
+- min / average / max weight
 
-The only external runtime dependency is Three.js itself via jsDelivr.
+Fine controls use genuine MakeHuman detail/measure targets.
 
-Expected UI status:
-`2/2 echte MakeHuman-Morphs lokal aktiv`
+`Proportionen koppeln` is an additional Harness Body Lab convenience layer. Its neighbour
+correlation coefficients are heuristic and deliberately modest. It can be disabled or its
+strength changed. The whole-body Weight/Muscle/Gender correlation itself is MakeHuman data.
 
-The four target files and base.obj were extracted from the MakeHuman v1.3.0 source archive
-provided by the user.
+## UI
+The bottom sheet does not snap. Drag the handle and release it anywhere; it stays at the
+release position. The contents inside the sheet scroll independently.

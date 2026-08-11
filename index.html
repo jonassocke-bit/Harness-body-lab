@@ -4,65 +4,53 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101011">
-<title>Harness Body Quality Test Local</title>
+<title>Harness Body Lab v1</title>
 <link rel="stylesheet" href="./style.css">
 <script type="importmap">
-{
-  "imports":{
-    "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-  }
-}
+{"imports":{
+"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+}}
 </script>
 </head>
 <body>
 <div id="viewport">
-  <div id="status" class="loading">
-    <span class="dot"></span>
-    <div>
-      <strong>Lokaler MakeHuman-Test wird geladen…</strong>
-      <small>Basemesh + Taille/Hüfte direkt aus deinem Repo</small>
-    </div>
-  </div>
-  <div id="version">QUALITY TEST · LOCAL v2</div>
+ <div id="loading"><span></span><div><strong>Body Lab lädt…</strong><small>lokale MakeHuman-Morphs</small></div></div>
+ <div id="badge">BODY LAB · v1</div>
 </div>
 
 <section id="sheet">
-  <div id="handle"><span></span></div>
-  <div id="content">
-    <header>
-      <div>
-        <h1>Body Quality Test</h1>
-        <p id="targetState">Lokale Dateien werden geprüft…</p>
-      </div>
-      <button id="reset">Reset</button>
-    </header>
+ <div id="handle"><span></span></div>
+ <div id="scroll">
+  <header><div><h1>Körper</h1><p>MakeHuman · echte Morphs</p></div><button id="reset">Reset</button></header>
 
-    <div class="compare">
-      <button data-view="front" class="active">Front</button>
-      <button data-view="side">Side</button>
-      <button data-view="back">Back</button>
-    </div>
-
-    <div class="section">ECHTE MAKEHUMAN TARGETS · LOKAL</div>
-    <div class="control">
-      <label for="waist">Taille <em>REAL</em></label>
-      <input id="waist" type="range" min="-1" max="1" step=".01" value="0">
-      <output id="waistOut">0</output>
-    </div>
-    <div class="control">
-      <label for="hips">Hüfte <em>REAL</em></label>
-      <input id="hips" type="range" min="-1" max="1" step=".01" value="0">
-      <output id="hipsOut">0</output>
-    </div>
-
-    <div class="note">
-      <strong>Diesmal ist alles lokal.</strong> <code>base.obj</code> und alle vier
-      MakeHuman-Targets liegen direkt in deinem GitHub-Repo. Keine LFS-/Media-Downloads.
-    </div>
+  <div class="toggleRow">
+    <label><input type="checkbox" id="linked" checked> Proportionen koppeln</label>
+    <span id="linkLabel">realistisch</span>
   </div>
-</section>
+  <div class="control compact">
+    <label>Kopplung</label><input id="linkStrength" type="range" min="0" max="1" step=".05" value=".7"><output>70</output>
+  </div>
 
+  <div class="section">GRUNDFORM · MAKEHUMAN MACRO</div>
+  <div id="macroControls"></div>
+
+  <div class="section">TORSO</div>
+  <div id="torsoControls"></div>
+
+  <div class="section">BECKEN & BEINE</div>
+  <div id="legControls"></div>
+
+  <div class="section">ARME & HALS</div>
+  <div id="armControls"></div>
+
+  <div class="note">
+   <strong>Makro vs. Detail:</strong> Gender, Gewicht und Muskelmasse werden bereits als zusammenhängende
+   MakeHuman-Körperform berechnet. Die Detailregler liegen additiv darüber. Bei aktivierter Kopplung
+   ziehen extreme Detailänderungen benachbarte Maße dezent mit.
+  </div>
+ </div>
+</section>
 <script type="module" src="./app.js"></script>
 </body>
 </html>
