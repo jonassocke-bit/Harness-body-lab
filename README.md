@@ -1,34 +1,23 @@
-# Harness Body Quality Test v1
+# Harness Body Quality Test — local MakeHuman v2
 
-Upload all files directly into the root of the GitHub repository.
+Upload ALL files directly into the root of the GitHub Pages repository:
 
-Files:
 - index.html
 - style.css
 - app.js
-- README.md
+- base.obj
+- waist-decr.target
+- waist-incr.target
+- hips-decr.target
+- hips-incr.target
 
-This is intentionally not another full Body Lab version. It is a minimal quality gate.
+Everything relevant to the body test is local now. No Git LFS, no GitHub Media endpoint,
+no external body/target runtime downloads.
 
-## What is different
+The only external runtime dependency is Three.js itself via jsDelivr.
 
-- The visible MakeHuman hm08 body is selected strictly by original vertex IDs `0..13379`.
-- Faces are preserved only when all their original vertex IDs belong to that visible body range.
-- The mesh stays indexed: one original MakeHuman body vertex == one rendered body vertex.
-- Smooth normals are calculated on that shared topology.
-- No helper/joint group-name filtering.
-- No merge-by-position.
-- No approximate body shape sliders.
-- Only two genuine MakeHuman morph pairs are tested:
-  - waist circumference
-  - hip circumference
+Expected UI status:
+`2/2 echte MakeHuman-Morphs lokal aktiv`
 
-## Expected status
-
-`2/2 echte MakeHuman-Morphs aktiv`
-
-If it shows less than 2/2, the GitHub media/LFS endpoint is not usable reliably from the iPhone and the target bytes need to be physically bundled in the repository.
-
-Runtime sources:
-- hm08 base: NAVER Anny MPFB2 data (CC0)
-- morph targets: makehumancommunity/makehuman-assets (CC0)
+The four target files and base.obj were extracted from the MakeHuman v1.3.0 source archive
+provided by the user.

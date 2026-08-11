@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101011">
-<title>Harness Body Quality Test</title>
+<title>Harness Body Quality Test Local</title>
 <link rel="stylesheet" href="./style.css">
 <script type="importmap">
 {
@@ -20,11 +20,11 @@
   <div id="status" class="loading">
     <span class="dot"></span>
     <div>
-      <strong>Quality Test wird geladen…</strong>
-      <small>hm08 Body + echte Taille/Hüfte Targets</small>
+      <strong>Lokaler MakeHuman-Test wird geladen…</strong>
+      <small>Basemesh + Taille/Hüfte direkt aus deinem Repo</small>
     </div>
   </div>
-  <div id="version">QUALITY TEST · v1</div>
+  <div id="version">QUALITY TEST · LOCAL v2</div>
 </div>
 
 <section id="sheet">
@@ -33,7 +33,7 @@
     <header>
       <div>
         <h1>Body Quality Test</h1>
-        <p id="targetState">Mesh wird geladen…</p>
+        <p id="targetState">Lokale Dateien werden geprüft…</p>
       </div>
       <button id="reset">Reset</button>
     </header>
@@ -44,7 +44,7 @@
       <button data-view="back">Back</button>
     </div>
 
-    <div class="section">ECHTE MAKEHUMAN TARGETS</div>
+    <div class="section">ECHTE MAKEHUMAN TARGETS · LOKAL</div>
     <div class="control">
       <label for="waist">Taille <em>REAL</em></label>
       <input id="waist" type="range" min="-1" max="1" step=".01" value="0">
@@ -57,8 +57,8 @@
     </div>
 
     <div class="note">
-      <strong>Nur diese zwei Regler zählen.</strong> Keine approximierten Body-Slider, keine Presets.
-      Wenn Taille und Hüfte hier natürlich aussehen, lohnt sich der vollständige MakeHuman-Ausbau.
+      <strong>Diesmal ist alles lokal.</strong> <code>base.obj</code> und alle vier
+      MakeHuman-Targets liegen direkt in deinem GitHub-Repo. Keine LFS-/Media-Downloads.
     </div>
   </div>
 </section>
