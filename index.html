@@ -1,56 +1,63 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#111111" />
-  <title>Harness Body Lab</title>
-  <link rel="stylesheet" href="./style.css" />
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-    }
-  }
-  </script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
+<meta name="theme-color" content="#111111"/>
+<title>Harness Body Lab v2</title>
+<link rel="stylesheet" href="./style.css"/>
+<script type="importmap">
+{"imports":{
+"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+}}
+</script>
 </head>
 <body>
-  <main id="app">
-    <section id="viewport">
-      <div id="status">Fallback-Mannequin aktiv · MakeHuman-Assets können ergänzt werden</div>
-    </section>
-
-    <aside id="panel">
-      <div class="grabber"></div>
-      <div class="panel-head">
-        <div>
-          <h1>Body Lab</h1>
-          <p>Parametrische Körperbasis für den Harness Designer</p>
-        </div>
-        <button id="reset">Reset</button>
+<div id="app">
+  <div id="viewport">
+    <div id="loading">
+      <div class="spinner"></div>
+      <div>
+        <strong>Echtes MakeHuman-Basemesh wird geladen…</strong>
+        <small>CC0 hm08 · keine Kleidung</small>
       </div>
+    </div>
+    <div id="badge">BODY LAB · v0.2</div>
+  </div>
 
-      <div id="presetRow" class="presets">
+  <section id="sheet" aria-label="Körpereditor">
+    <div id="sheetHandle"><span></span></div>
+    <div id="sheetContent">
+      <header>
+        <div>
+          <h1>Körper</h1>
+          <p>Parametrische Basis für Harness-Fitting</p>
+        </div>
+        <button id="resetBtn">Reset</button>
+      </header>
+
+      <nav id="presets">
         <button data-preset="female">Female</button>
         <button data-preset="neutral" class="active">Neutral</button>
         <button data-preset="male">Male</button>
         <button data-preset="curvy">Curvy</button>
         <button data-preset="muscular">Muscular</button>
+      </nav>
+
+      <div class="section-title">Basis</div>
+      <div id="coreControls"></div>
+      <div class="section-title">Oberkörper</div>
+      <div id="torsoControls"></div>
+      <div class="section-title">Unterkörper & Gliedmaßen</div>
+      <div id="limbControls"></div>
+
+      <div class="info">
+        <strong>Mesh:</strong> MakeHuman hm08 / MPFB2 CC0. Die v0.2-Regler deformieren bereits das echte gemeinsame Basemesh direkt im Browser.
       </div>
-
-      <div id="controls"></div>
-
-      <details>
-        <summary>Technischer Status</summary>
-        <p id="techStatus">
-          Lädt <code>assets/makehuman/base.obj</code> und Targets aus
-          <code>assets/makehuman/targets/</code>, sobald diese vorhanden sind.
-          Ohne Assets läuft ein lokales parametrisches Platzhalter-Mannequin.
-        </p>
-      </details>
-    </aside>
-  </main>
-  <script type="module" src="./app.js"></script>
+    </div>
+  </section>
+</div>
+<script type="module" src="./app.js"></script>
 </body>
 </html>
