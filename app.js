@@ -7,7 +7,7 @@ import { GROUP_LABELS } from "./labels.js";
 import { FACE_GROUPS } from "./face-config.js";
 import { FACE } from "./face-morphs.js";
 import { RIG } from "./rig-data.js";
-const MEASURE_RULERS={"measure-neck-circ":[7514,10358,7631,7496,7488,7489,7474,7475,7531,7537,7543,7549,7555,7561,7743,7722,856,1030,1051,850,844,838,832,826,820,756,755,770,769,777,929,3690,804,800,808,801,799,803,7513,7515,7521,7514],"measure-neck-height":[853,854,855,856,857,858,1496,1491],"measure-upperarm-circ":[8383,8393,8392,8391,8390,8394,8395,8399,10455,10516,8396,8397,8398,8388,8387,8386,10431,8385,8384,8389],"measure-upperarm-length":[8274,10037],"measure-lowerarm-length":[10040,10548],"measure-wrist-circ":[10208,10211,10212,10216,10471,10533,10213,10214,10215,10205,10204,10203,10437,10202,10201,10206,10200,10210,10209,10208],"measure-frontchest-dist":[1437,8125],"measure-bust-circ":[8439,8455,8462,8446,8478,8494,8557,8510,8526,8542,10720,10601,10603,10602,10612,10611,10610,10613,10604,10605,10606,3942,3941,3940,3950,3947,3948,3949,3938,3939,3937,4065,1870,1854,1838,1885,1822,1806,1774,1790,1783,1767,1799,8471],"measure-underbust-circ":[10750,10744,10724,10725,10748,10722,10640,10642,10641,10651,10650,10649,10652,10643,10644,10645,10646,10647,10648,3988,3987,3986,3985,3984,3983,3982,3992,3989,3990,3991,3980,3981,3979,4067,4098,4073,4072,4094,4100,4082,4088,4088],"measure-waist-circ":[4121,10760,10757,10777,10776,10779,10780,10778,10781,10771,10773,10772,10775,10774,10814,10834,10816,10817,10818,10819,10820,10821,4181,4180,4179,4178,4177,4176,4175,4196,4173,4131,4132,4129,4130,4128,4138,4135,4137,4136,4133,4134,4108,4113,4118,4121],"measure-napetowaist-dist":[1491,4181],"measure-waisttohip-dist":[4121,4341],"measure-shoulder-dist":[7478,8274],"measure-hips-circ":[4341,10968,10969,10971,10970,10967,10928,10927,10925,10926,10923,10924,10868,10875,10861,10862,4228,4227,4226,4242,4234,4294,4293,4296,4295,4297,4298,4342,4345,4346,4344,4343,4361,4341],"measure-upperleg-height":[10970,11230],"measure-thigh-circ":[11071,11080,11081,11086,11076,11077,11074,11075,11072,11073,11069,11070,11087,11085,11084,12994,11083,11082,11079,11071],"measure-lowerleg-height":[11225,12820],"measure-calf-circ":[11339,11336,11353,11351,11350,13008,11349,11348,11345,11337,11344,11346,11347,11352,11342,11343,11340,11341,11338,11339],"measure-ankle-circ":[11460,11464,11458,11459,11419,11418,12958,12965,12960,12963,12961,12962,12964,12927,13028,12957,11463,11461,11457,11460],"measure-knee-circ":[11223,11230,11232,11233,11238,11228,11229,11226,11227,11224,11225,11221,11222,11239,11237,11236,13002,11235,11234,11223]};
+import { MEASURE_RULERS } from "./measurement-data.js";
 
 
 async function fetchBinaryMaybeChunked(url,onPart){
@@ -149,41 +149,11 @@ function makeControl(parent,id,label,min,max,value,handler,display=v=>fmt(v),opt
    handler(v);
  });
 
- // Inline revision editor; shown only while global Revision mode is active.
- const rev=document.createElement("div");rev.className="inlineRevision";
- rev.innerHTML=`
-   <label>Anzeige
-     <select class="irTier">
-       <option value="main">Hauptansicht</option>
-       <option value="fine">Feinanpassung</option>
-       <option value="advanced">Advanced</option>
-     </select>
-   </label>
-   <label>Anzeigename
-     <input class="irLabel" type="text">
-   </label>
-   <label>Referenzwert
-     <input class="irReference" type="text" inputmode="decimal" placeholder="z. B. 95">
-   </label>
-   <label>Einheit
-     <input class="irUnit" type="text" placeholder="cm / kg / Jahre / 80D">
-   </label>
-   <label class="revWide">Notiz
-     <textarea class="irNote" placeholder="Warum wichtig? Wo wird es unrealistisch? …"></textarea>
-   </label>
-   <div class="revAuto">Aktueller Wert: –</div>
-   <div class="revButtons">
-     <button type="button" class="irSaveUI">UI speichern</button>
-     <button type="button" class="irSaveMark">Marke speichern</button>
-   </div>
- `;
- wrap.append(rev);
-
  parent.append(wrap);
  ui.set(id,{
    inp,out,row,wrap,display,default:value,
    defaultMin:min,defaultMax:max,
-   rangeEditor,real,labelEl:lab,homeParent:parent,target:opts.target||null,revNode:rev
+   rangeEditor,real,labelEl:lab,homeParent:parent,target:opts.target||null
  });
 }
 
@@ -429,7 +399,7 @@ function computeLiveMetrics(){
    q.real.textContent=Number.isFinite(cm)?`${cm.toFixed(1)} cm`:"";
   }else q.real.textContent="";
  }
- if(revisionMode)refreshAllInlineRevision();
+ refreshRevisionAutoValue?.();
 }
 function scheduleLiveMetrics(){
  clearTimeout(metricTimer);metricTimer=setTimeout(computeLiveMetrics,120);
@@ -721,13 +691,13 @@ document.querySelector("#reset").addEventListener("click",()=>{
 });
 
 // ================================================================
-// v2.7.2 GUIDED DEBUG / REPORT MODE
+// v2.7.0 GUIDED DEBUG / REPORT MODE
 // Mirrors the Harness Designer guided report workflow:
 // pass/fail/skip, per-question comments, multiple screenshots,
 // persistent current question, HTML report, share fallback, JPG report.
 // ================================================================
 const DEBUG_STORAGE_KEY="bodylab_v263_guided_debug";
-const DEBUG_BUILD="BODY LAB v2.7.2 · GUIDED DEBUG";
+const DEBUG_BUILD="BODY LAB v2.7.0 · GUIDED DEBUG";
 
 const DEBUG_QUESTIONS=[
  {title:"Build / Laden",text:"Lädt Body Lab vollständig? Verschwindet der Ladehinweis und bleibt die App anschließend stabil bedienbar?"},
@@ -926,11 +896,11 @@ function downloadBlob(blob,name){
 }
 document.querySelector("#debugReportBtn").addEventListener("click",()=>{
  const html=buildDebugReportHtml();
- downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.7.2-GUIDED-report.html");
+ downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.7.0-GUIDED-report.html");
 });
 document.querySelector("#debugShareBtn").addEventListener("click",async()=>{
  const html=buildDebugReportHtml();
- const file=new File([html],"Body-Lab-v2.7.2-GUIDED-report.html",{type:"text/html"});
+ const file=new File([html],"Body-Lab-v2.7.0-GUIDED-report.html",{type:"text/html"});
  try{
    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
      await navigator.share({title:DEBUG_BUILD,files:[file]});
@@ -975,7 +945,7 @@ document.querySelector("#debugImageBtn").addEventListener("click",()=>{
    x.font="bold 25px system-ui";x.fillStyle="#111";x.fillText("Gesamtkommentar",pad,y);y+=38;
    x.font="20px system-ui";x.fillStyle="#444";wrapText(x,debugState.overall,pad,y,W-pad*2,line);
  }
- c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.7.2-GUIDED-report.jpg"),"image/jpeg",.9);
+ c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.7.0-GUIDED-report.jpg"),"image/jpeg",.9);
 });
 
 document.querySelector("#debugRestartBtn").addEventListener("click",()=>{
@@ -1016,25 +986,39 @@ document.querySelector("#saveCustomPreset").onclick=()=>{
 };
 renderUserPresets();
 
-// ===== Revision / calibration + UI relevance — inline v2.7.2 =====
-const REV_KEY="bodylab_v271_revision",MARK_KEY="bodylab_v271_calmarks";
+// ===== Revision / calibration + UI relevance =====
+const REV_KEY="bodylab_v270_revision",MARK_KEY="bodylab_v270_calmarks";
 let revConfig={};try{revConfig=JSON.parse(localStorage.getItem(REV_KEY)||"{}")}catch(_){}
 let revMarks=[];try{revMarks=JSON.parse(localStorage.getItem(MARK_KEY)||"[]")}catch(_){}
-let revisionMode=false;
-
-function saveRev(){
- localStorage.setItem(REV_KEY,JSON.stringify(revConfig));
- localStorage.setItem(MARK_KEY,JSON.stringify(revMarks));
+function saveRev(){localStorage.setItem(REV_KEY,JSON.stringify(revConfig));localStorage.setItem(MARK_KEY,JSON.stringify(revMarks))}
+const revSelect=document.querySelector("#revParameter");
+function populateRevisionOptions(){
+ revSelect.innerHTML="";
+ for(const [id,q] of ui){
+  const o=document.createElement("option");o.value=id;o.textContent=`${q.labelEl.textContent} · ${id}`;revSelect.append(o);
+ }
 }
-function defaultTier(id){
- return ["gender","age","weight","muscle","height","proportions","breastSize","breastFirmness"].includes(id)?"main":"advanced";
+function defaultTier(id){return ["gender","age","weight","muscle","height","proportions","breastSize","breastFirmness"].includes(id)?"main":"advanced"}
+function applyRevisionLayout(){
+ let fine=0,main=0;
+ for(const [id,q] of ui){
+  const c=revConfig[id]||{};
+  if(c.label)q.labelEl.textContent=c.label;
+  const tier=c.tier||defaultTier(id);
+  // Core controls already live in main basic panel. Advanced controls can be promoted.
+  const isCore=q.homeParent?.id==="coreControls";
+  if(isCore)continue;
+  if(tier==="main"){document.querySelector("#mainExtraControls").append(q.wrap);main++}
+  else if(tier==="fine"){document.querySelector("#fineControls").append(q.wrap);fine++}
+  else q.homeParent.append(q.wrap);
+ }
+ document.querySelector("#mainExtraSection").classList.toggle("hidden",main===0);
+ document.querySelector("#fineSection").classList.toggle("hidden",fine===0);
+ document.querySelector("#fineCount").textContent=fine;
 }
 function suggestedUnit(id,q){
- if(id==="weight")return "kg";
- if(id==="height")return "cm";
- if(id==="age")return "Jahre";
- if(q?.target && MEASURE_RULERS[q.target])return "cm";
- return "";
+ if(id==="weight")return "kg";if(id==="height")return "cm";if(id==="age")return "Jahre";
+ if(q?.target && MEASURE_RULERS[q.target])return "cm";return "";
 }
 function autoValueFor(id){
  const q=ui.get(id);if(!q)return "";
@@ -1042,83 +1026,32 @@ function autoValueFor(id){
  if(id==="height"&&liveMetrics.heightCm)return `${liveMetrics.heightCm.toFixed(1)} cm`;
  if(id==="age")return `${ageYears(state.age).toFixed(0)} Jahre`;
  if(q.target&&liveMetrics.measures?.[q.target])return `${liveMetrics.measures[q.target].toFixed(1)} cm`;
- const tech=q.out?.textContent||"";
- const real=q.real?.textContent||"";
- return [tech,real].filter(Boolean).join(" · ");
+ return `${q.out.textContent}`;
 }
-function applyRevisionLayout(){
- let fine=0,main=0;
- for(const [id,q] of ui){
-   const c=revConfig[id]||{};
-   if(c.label)q.labelEl.textContent=c.label;
-   const tier=c.tier||defaultTier(id);
-   const isCore=q.homeParent?.id==="coreControls";
-   if(isCore)continue;
-   if(tier==="main"){document.querySelector("#mainExtraControls").append(q.wrap);main++}
-   else if(tier==="fine"){document.querySelector("#fineControls").append(q.wrap);fine++}
-   else q.homeParent.append(q.wrap);
- }
- document.querySelector("#mainExtraSection").classList.toggle("hidden",main===0);
- document.querySelector("#fineSection").classList.toggle("hidden",fine===0);
- document.querySelector("#fineCount").textContent=fine;
-}
-function fillInlineRevision(id,q){
- const r=q.revNode;if(!r)return;
+function loadRevisionForm(){
+ const id=revSelect.value,q=ui.get(id);if(!q)return;
  const c=revConfig[id]||{};
- r.querySelector(".irTier").value=c.tier||defaultTier(id);
- r.querySelector(".irLabel").value=c.label||q.labelEl.textContent;
- r.querySelector(".irUnit").value=c.unit??suggestedUnit(id,q);
- r.querySelector(".irNote").value=c.note||"";
- r.querySelector(".revAuto").textContent=`Aktueller Wert: ${autoValueFor(id)}`;
+ document.querySelector("#revTier").value=c.tier||defaultTier(id);
+ document.querySelector("#revLabel").value=c.label||q.labelEl.textContent;
+ document.querySelector("#revNote").value=c.note||"";
+ document.querySelector("#revUnit").value=c.unit??suggestedUnit(id,q);
+ document.querySelector("#revReference").value="";
+ refreshRevisionAutoValue();
+ renderRevisionMarks();
 }
-function refreshAllInlineRevision(){
- for(const [id,q] of ui)fillInlineRevision(id,q);
+function refreshRevisionAutoValue(){
+ if(!revSelect)return;const id=revSelect.value;if(!id)return;
+ const el=document.querySelector("#revAutoValue");if(el)el.textContent=`Aktueller berechneter/technischer Wert: ${autoValueFor(id)}`;
 }
-function bindInlineRevision(){
- for(const [id,q] of ui){
-   const r=q.revNode;if(!r||r.dataset.bound)return;
-   r.dataset.bound="1";
-   r.querySelector(".irSaveUI").onclick=()=>{
-     revConfig[id]={
-       ...(revConfig[id]||{}),
-       tier:r.querySelector(".irTier").value,
-       label:r.querySelector(".irLabel").value.trim()||q.labelEl.textContent,
-       unit:r.querySelector(".irUnit").value.trim(),
-       note:r.querySelector(".irNote").value.trim()
-     };
-     saveRev();applyRevisionLayout();refreshAllInlineRevision();
-   };
-   r.querySelector(".irSaveMark").onclick=()=>{
-     const ref=r.querySelector(".irReference").value.trim();
-     const reference=ref||autoValueFor(id).replace(/[^\d.,-]/g,"");
-     if(!reference){alert("Referenzwert eingeben oder einen berechenbaren Parameter wählen.");return}
-     revMarks.push({
-       id,
-       label:r.querySelector(".irLabel").value.trim()||q.labelEl.textContent,
-       reference,
-       unit:r.querySelector(".irUnit").value.trim(),
-       autoValue:autoValueFor(id),
-       note:r.querySelector(".irNote").value.trim(),
-       capturedAt:new Date().toISOString(),
-       state:captureBodyState()
-     });
-     saveRev();
-     r.querySelector(".irReference").value="";
-     r.querySelector(".revAuto").textContent=`Marke gespeichert · aktueller Wert: ${autoValueFor(id)}`;
-   };
- }
+function renderRevisionMarks(){
+ const h=document.querySelector("#revMarks");h.innerHTML="";
+ revMarks.filter(m=>m.id===revSelect.value).forEach(m=>{
+  const d=document.createElement("div");d.className="revMark";
+  d.innerHTML=`<strong>${m.reference}${m.unit?" "+m.unit:""}</strong><br>${m.autoValue||""}${m.note?" · "+m.note:""}`;
+  h.append(d);
+ });
 }
-function setRevisionMode(on){
- revisionMode=on;
- document.body.classList.toggle("revisionMode",on);
- document.querySelector("#revOpenBtn").classList.toggle("active",on);
- document.querySelector("#revOpenBtn").textContent=on?"Revision ✓":"Revision";
- if(on){bindInlineRevision();refreshAllInlineRevision()}
-}
-document.querySelector("#revOpenBtn").onclick=()=>setRevisionMode(!revisionMode);
-applyRevisionLayout();
-bindInlineRevision();
-document.querySelector("#revPanel").classList.remove("hidden");loadRevisionForm()};
+document.querySelector("#revOpenBtn").onclick=()=>{populateRevisionOptions();applyRevisionLayout();document.querySelector("#revPanel").classList.remove("hidden");loadRevisionForm()};
 document.querySelector("#revCloseBtn").onclick=()=>document.querySelector("#revPanel").classList.add("hidden");
 revSelect.onchange=loadRevisionForm;
 document.querySelector("#revApplyBtn").onclick=()=>{
@@ -1134,8 +1067,8 @@ document.querySelector("#revMarkBtn").onclick=()=>{
 };
 document.querySelector("#revClearMarksBtn").onclick=()=>{if(confirm("Alle Kalibrierungsmarken löschen?")){revMarks=[];saveRev();renderRevisionMarks()}};
 document.querySelector("#revExportBtn").onclick=()=>{
- const payload={build:"BODY LAB v2.7.2",exportedAt:new Date().toISOString(),ui:revConfig,marks:revMarks,userPresets:Object.keys(userPresets)};
- const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="Body-Lab-v2.7.2-REVISION.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);
+ const payload={build:"BODY LAB v2.7.0",exportedAt:new Date().toISOString(),ui:revConfig,marks:revMarks,userPresets:Object.keys(userPresets)};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="Body-Lab-v2.7.0-REVISION.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);
 };
 populateRevisionOptions();applyRevisionLayout();
 
