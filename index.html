@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101011">
-<title>Harness Body Lab v2.4</title>
+<title>Harness Body Lab v2.6.2</title>
 <link rel="stylesheet" href="./style.css">
 <script type="importmap">
 {"imports":{
@@ -16,7 +16,7 @@
 <body>
 <div id="viewport">
  <div id="loading"><span></span><div><strong>Body Lab MAX lädt…</strong><small>MakeHuman Source 1.3.0</small></div></div>
- <div id="badge">BODY LAB · v2.4</div>
+ <div id="badge">BODY LAB · v2.6.2.1</div>
 </div>
 
 <section id="sheet">
@@ -36,6 +36,15 @@
    <button data-preset="femaleCurvy">Female Curvy</button>
    <button data-preset="neutral" class="active">Neutral</button>
   </div>
+
+  <div class="sectionLabel">POSE TEST · MAKEHUMAN DEFAULT RIG</div>
+  <div class="poseRow">
+   <button data-pose="neutral" class="active">Neutral</button>
+   <button data-pose="armsDown">Arms down</button>
+   <button data-pose="armsUp">Arms up</button>
+   <button data-pose="step">Step</button>
+  </div>
+  <div id="rigStatus" class="rigStatus">Rig wird geladen …</div>
 
   <div class="sectionLabel">BASIS</div>
   <div class="basicPanel">
@@ -57,12 +66,21 @@
      <button id="applyGlobalRange" type="button">Anwenden</button>
     </div>
 
+    <details class="group population" open>
+     <summary><span>Population mix</span><b>3</b></summary>
+     <div class="groupbody" id="populationControls"></div>
+    </details>
+    <details class="faceAdvanced">
+     <summary><span>Face / Head</span><b id="faceCount"></b></summary>
+     <div id="faceGroups"></div>
+    </details>
+
     <div id="groups"></div>
    </div>
   </details>
 
   <div class="note">
-   <strong>Bedienkonzept:</strong> Presets und die sieben MakeHuman-Makros sind die schnelle
+   <strong>Bedienkonzept:</strong> Presets und die echten MakeHuman-Makros sind die schnelle
    Ausgangsebene. Unter Advanced bleiben weiterhin praktisch alle körperrelevanten direkten Modifier aus MakeHumans <code>modeling_modifiers.json</code>, <code>measurement_modifiers.json</code>
    und <code>bodyshapes_modifiers.json</code>. Gesicht, Augen, Nase, Mund und Ohren sind absichtlich
    nicht enthalten, weil sie fürs Harness-Fitting keinen Einfluss haben.

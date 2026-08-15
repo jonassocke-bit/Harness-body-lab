@@ -1,4 +1,4 @@
-# Harness Body Lab v2.4
+# Harness Body Lab v2.6.2 — exact MakeHuman macro stack
 
 This build extracts the body-relevant MakeHuman 1.3.0 modifier catalog instead of hand-picking sliders.
 
@@ -106,3 +106,71 @@ The supplied MakeHuman 1.3.0 source archive also contains:
 - animation/pose BVHs including walk and dance examples
 
 These are the basis for a later proper Three.js SkinnedMesh pose implementation.
+
+
+## v2.6.2 — exact macro dependency port
+
+The previous builds omitted MakeHuman's `macrodetails` target layer. This layer contains the
+race/population × gender × age base-shape targets and is a major part of the visible male/female difference.
+
+v2.6.2 includes the complete relevant MakeHuman 1.3.0 macro target stack locally and computes each
+target weight using MakeHuman's own factor principle: the weight is the product of the values of
+all macro-variable tokens encoded in that target.
+
+Included macro dimensions:
+- Gender
+- Age (using the exact `_setAgeVals()` formula from `human.py`)
+- Caucasian / Asian / African population mix, normalized to sum to 1
+- Muscle
+- Weight
+- Height
+- Body proportions
+- Breast size
+- Breast firmness
+
+Macro target groups included:
+- `macrodetails`: race × gender × age
+- `macrodetails-universal`: gender × age × muscle × weight
+- `macrodetails-height`: gender × age × muscle × weight × height
+- `macrodetails-proportions`: gender × age × muscle × weight × proportions
+- breast macro targets conditioned by age/gender/muscle/weight/cup/firmness where present
+
+Advanced direct modifiers remain additive on top.
+
+
+### Binary packaging
+The exact macro target stack is stored as local Float32 binary chunks instead of huge JavaScript arrays.
+This keeps every GitHub-uploaded file under the web upload size limit and reduces parse overhead on iPhone Safari.
+
+
+## v2.6.2 — face + first real rig/pose test
+
+- Adds 138 MakeHuman head/face modifiers under Advanced:
+  head, forehead, eyebrows, eyes, nose, mouth, ears, chin and cheeks.
+- Loads MakeHuman's official `default.mhskel` structure and `default_weights.mhw` skin weights
+  extracted from the supplied v1.3.0 source.
+- Builds a Three.js `SkinnedMesh` with 163 MakeHuman bones.
+- Pose buttons are intentionally simple direct bone rotations for this first test:
+  Neutral, Arms down, Arms up, Step.
+- The purpose of these buttons is to validate MakeHuman skinning in Safari before adding BVH or Mixamo retargeting.
+
+Body Proportions remains driven by the exact MakeHuman macro target stack. Test it at 0 and 100;
+its effect is subtler than Weight/Muscle because it changes relative limb/torso proportions rather
+than overall body mass.
+
+
+## v2.6.2 — GitHub Mobile split build
+
+The six large `exact-macros-*.bin` files were split into small flat chunks of at most
+approximately 2.4 MB each.
+
+`macro-chunks.json` maps the original binary filename to its chunk files. The browser loader
+reassembles the chunks in memory before parsing the macro data.
+
+No folders are required. Upload every file in this ZIP directly to the repository root.
+
+Largest file in this build is intentionally kept below typical mobile GitHub web-upload limits.
+
+
+## v2.6.2
+All exact macro data is now stored in small UTF-8 JavaScript modules. No macro .bin files remain. This build is intended for iPhone/GitHub mobile upload.
