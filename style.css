@@ -236,19 +236,50 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
 .revGrid{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}.revAutoValue{font-size:10px;color:#c8c8cd;background:#171719;padding:8px;border-radius:9px;margin-top:9px}
 .revActions,.revFooter{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.revActions button,.revFooter button{font-size:10px}.revSectionTitle{font-size:9px;letter-spacing:.12em;color:#777;margin:13px 1px 5px}.revMarks{display:flex;flex-direction:column;gap:5px}.revMark{background:rgba(255,255,255,.04);border-radius:9px;padding:7px;font-size:9px;color:#aaa}.revMark strong{font-size:10px;color:#ddd}
 
-/* v2.7.3 Safari-safe inline revision */
-.control{grid-template-columns:105px minmax(100px,1fr) 62px;gap:6px}
-.valueStack{width:62px;min-width:62px}
-.valueBtn,.realValue{width:62px;max-width:62px;text-align:right;white-space:nowrap;overflow:visible}
-.valueBtn{font-size:8px;padding:0 2px}
-.realValue{font-size:7px}
-.inlineRevision{display:none;padding:7px 8px 9px;border-top:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.025);border-radius:0 0 9px 9px}
+/* v2.7.4 stable mobile value layout + inline revision */
+#scroll{padding-left:10px;padding-right:10px}
+.controlWrap{width:100%;max-width:100%;overflow:visible}
+.control{
+  width:100%;
+  grid-template-columns:minmax(88px,108px) minmax(0,1fr) 58px;
+  gap:5px;
+}
+.control label{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.control input[type=range]{min-width:0;width:100%}
+.valueStack{
+  width:58px;min-width:58px;max-width:58px;
+  overflow:visible;align-items:flex-end
+}
+.valueBtn{
+  width:58px;min-width:58px;max-width:58px;
+  padding:0 1px;font-size:8px;text-align:right;white-space:nowrap
+}
+.realValue{
+  width:58px;max-width:58px;
+  font-size:7px;line-height:1.05;text-align:right;white-space:nowrap
+}
+
+.inlineRevision{
+ display:none;
+ margin:0 4px 7px;
+ padding:7px;
+ border-top:1px solid rgba(255,255,255,.06);
+ background:rgba(255,255,255,.025);
+ border-radius:0 0 8px 8px
+}
 body.revisionMode .inlineRevision{display:block}
-.inlineRevision .irRow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
-.inlineRevision label{font-size:8px;color:#8f8f96}
-.inlineRevision select,.inlineRevision input,.inlineRevision textarea{display:block;width:100%;margin-top:3px;border:1px solid rgba(255,255,255,.09);background:#252528;color:#fff;border-radius:7px;padding:6px;font:inherit;font-size:9px}
-.inlineRevision textarea{min-height:40px;resize:vertical}
-.inlineRevision .irAuto{font-size:8px;color:#aaa;background:#19191b;border-radius:7px;padding:6px;margin-bottom:6px}
-.inlineRevision .irButtons{display:flex;gap:6px;flex-wrap:wrap}
-.inlineRevision .irButtons button{font-size:8px;padding:6px 8px}
+.inlineRevision .irTwo{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.inlineRevision label{display:block;font-size:8px;color:#8e8e95;margin-bottom:6px}
+.inlineRevision select,.inlineRevision input,.inlineRevision textarea{
+ width:100%;display:block;margin-top:3px;box-sizing:border-box;
+ border:1px solid rgba(255,255,255,.09);background:#252528;color:#fff;
+ border-radius:7px;padding:6px;font:inherit;font-size:9px
+}
+.inlineRevision textarea{min-height:38px;resize:vertical}
+.inlineRevision .irAuto{
+ font-size:8px;color:#aaa;background:#19191b;border-radius:7px;
+ padding:6px;margin-bottom:6px;white-space:normal
+}
+.inlineRevision .irBtns{display:flex;gap:6px;flex-wrap:wrap}
+.inlineRevision .irBtns button{font-size:8px;padding:6px 8px}
 #revOpenBtn.active{background:#eee;color:#111}
