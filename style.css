@@ -235,3 +235,46 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
 .revPanel label{display:block;font-size:9px;color:#999;margin-top:7px}.revPanel select,.revPanel input,.revPanel textarea{width:100%;display:block;margin-top:4px;border:1px solid rgba(255,255,255,.1);background:#29292d;color:#fff;border-radius:9px;padding:8px;font:inherit;font-size:11px}.revPanel textarea{min-height:58px;resize:vertical}
 .revGrid{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}.revAutoValue{font-size:10px;color:#c8c8cd;background:#171719;padding:8px;border-radius:9px;margin-top:9px}
 .revActions,.revFooter{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.revActions button,.revFooter button{font-size:10px}.revSectionTitle{font-size:9px;letter-spacing:.12em;color:#777;margin:13px 1px 5px}.revMarks{display:flex;flex-direction:column;gap:5px}.revMark{background:rgba(255,255,255,.04);border-radius:9px;padding:7px;font-size:9px;color:#aaa}.revMark strong{font-size:10px;color:#ddd}
+
+/* === v2.7.1 inline revision mode === */
+.control{
+  grid-template-columns:minmax(92px,112px) minmax(110px,1fr) 64px;
+  gap:6px;
+}
+.valueStack{min-width:0;width:64px;overflow:visible}
+.valueBtn{min-width:0;width:64px;font-size:8px;padding:0 2px;white-space:nowrap}
+.realValue{width:64px;text-align:right;overflow:visible;font-size:7.5px;white-space:nowrap}
+#scroll{padding-left:12px;padding-right:12px}
+
+body.revisionMode .controlWrap{background:rgba(255,255,255,.018);border-radius:9px;margin:1px 0 5px}
+.inlineRevision{
+ display:none;
+ grid-template-columns:1fr 1fr;
+ gap:6px 8px;
+ padding:7px 8px 9px;
+ margin:0 0 3px;
+ border-top:1px solid rgba(255,255,255,.055);
+ background:rgba(255,255,255,.025);
+ border-radius:0 0 9px 9px;
+}
+body.revisionMode .inlineRevision{display:grid}
+.inlineRevision label{font-size:8px;color:#8f8f96}
+.inlineRevision select,.inlineRevision input,.inlineRevision textarea{
+ display:block;width:100%;margin-top:3px;
+ border:1px solid rgba(255,255,255,.09);
+ background:#252528;color:#fff;border-radius:7px;
+ padding:6px 7px;font:inherit;font-size:9px;
+}
+.inlineRevision textarea{min-height:42px;resize:vertical}
+.inlineRevision .revWide{grid-column:1/-1}
+.inlineRevision .revAuto{
+ grid-column:1/-1;
+ font-size:8px;color:#a9a9af;
+ background:#19191b;border-radius:7px;padding:6px 7px;
+}
+.inlineRevision .revButtons{
+ grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap
+}
+.inlineRevision .revButtons button{font-size:8px;padding:6px 8px}
+#revOpenBtn.active{background:#eee;color:#111}
+body.revisionMode #advanced>summary::after{content:" · Revision aktiv";font-size:8px;color:#aaa;margin-left:6px}

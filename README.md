@@ -176,7 +176,7 @@ Largest file in this build is intentionally kept below typical mobile GitHub web
 All exact macro data is now stored in small UTF-8 JavaScript modules. No macro .bin files remain. This build is intended for iPhone/GitHub mobile upload.
 
 
-## v2.7.0 Guided Debug
+## v2.7.1 Guided Debug
 
 Adds the Harness-Designer-style guided test/report mode:
 - Pass / Fail / Skip per question
@@ -192,7 +192,7 @@ Adds the Harness-Designer-style guided test/report mode:
 - compact JPG report export
 
 
-## v2.7.0 — Safari loading architecture fix
+## v2.7.1 — Safari loading architecture fix
 
 Critical change:
 - `macro-text-manifest.js` no longer imports all 87 `macrodata-*.js` files at module startup.
@@ -207,7 +207,7 @@ Critical change:
 Existing static `macrodata-*.js` files stay in the repository unchanged.
 
 
-## v2.7.0 — unfragmented asset build
+## v2.7.1 — unfragmented asset build
 
 This build intentionally uses the six original exact MakeHuman macro binaries directly.
 No macrodata text fragments, no chunk manifest, and no body-morph JS fragments are used.
@@ -217,7 +217,7 @@ size of one web commit, upload/commit the large files individually (or in small 
 Each individual file in this build remains below GitHub's 25 MiB browser file limit.
 
 
-## v2.7.0 — Measurement + Revision UI
+## v2.7.1 — Measurement + Revision UI
 
 Uses 20 original MakeHuman measurement rulers extracted from
 `plugins/0_modeling_a_measurement.py`.
@@ -239,3 +239,23 @@ Revision mode:
 
 User presets:
 - Current full body state can be named and saved locally.
+
+
+## v2.7.1 — Inline Revision Mode
+
+Revision no longer opens a separate editor window.
+
+Press `Revision` once to toggle revision mode. Every parameter row then expands directly beneath
+its slider with:
+- UI tier: Hauptansicht / Feinanpassung / Advanced
+- editable display name
+- reference value + unit
+- revision note
+- current computed/technical value
+- UI save button
+- calibration mark button
+
+The normal mode remains compact.
+
+The slider value column was narrowed and rebuilt for a two-line display so technical values and
+real-world units (cm/kg/years) stay visible inside the iPhone bottom sheet.
