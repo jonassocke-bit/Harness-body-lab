@@ -174,3 +174,34 @@ Largest file in this build is intentionally kept below typical mobile GitHub web
 
 ## v2.6.2
 All exact macro data is now stored in small UTF-8 JavaScript modules. No macro .bin files remain. This build is intended for iPhone/GitHub mobile upload.
+
+
+## v2.6.4 Guided Debug
+
+Adds the Harness-Designer-style guided test/report mode:
+- Pass / Fail / Skip per question
+- per-question comments
+- multiple 3D screenshots per question
+- three screenshot thumbnails per row
+- closing/reopening preserves current question, status, comments and screenshots
+- Back from question 1 wraps to the last question
+- persistent state in localStorage
+- finish page + overall comment
+- HTML report with embedded screenshots
+- Web Share fallback
+- compact JPG report export
+
+
+## v2.6.4 — Safari loading architecture fix
+
+Critical change:
+- `macro-text-manifest.js` no longer imports all 87 `macrodata-*.js` files at module startup.
+- The manifest now contains filenames only.
+- Macro text chunks are fetched and decoded dynamically.
+- `base.obj` + MakeHuman rig render first.
+- Exact MakeHuman macro containers then load sequentially in the background.
+- Loading UI shows package and part progress.
+- 15 second timeout per macro text asset gives a concrete filename/error instead of an endless spinner.
+- The neutral mesh remains visible if macro loading fails.
+
+Existing static `macrodata-*.js` files stay in the repository unchanged.

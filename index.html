@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101011">
-<title>Harness Body Lab v2.6.2</title>
+<title>Harness Body Lab v2.6.4</title>
 <link rel="stylesheet" href="./style.css">
 <script type="importmap">
 {"imports":{
@@ -16,8 +16,56 @@
 <body>
 <div id="viewport">
  <div id="loading"><span></span><div><strong>Body Lab MAX lädt…</strong><small>MakeHuman Source 1.3.0</small></div></div>
- <div id="badge">BODY LAB · v2.6.2.1</div>
+ <div id="badge">BODY LAB · v2.6.4.1</div>
+  <button id="debugOpenBtn" type="button">Debug Test</button>
 </div>
+
+<section id="debugPanel" class="debugPanel hidden" aria-label="Guided Debug Test">
+ <div class="debugHead">
+  <div>
+   <strong id="debugBuild">BODY LAB v2.6.4 · GUIDED TEST</strong>
+   <small id="debugProgress">1 / 1</small>
+  </div>
+  <button id="debugHideBtn" type="button">Schließen</button>
+ </div>
+
+ <div id="debugQuestionView">
+  <div class="debugQuestionNo" id="debugQuestionNo"></div>
+  <h2 id="debugQuestionTitle"></h2>
+  <p id="debugQuestionText"></p>
+
+  <div class="debugStatusRow">
+   <button type="button" data-debug-status="pass">✓ Pass</button>
+   <button type="button" data-debug-status="fail">✕ Fail</button>
+   <button type="button" data-debug-status="skip">→ Skip</button>
+  </div>
+
+  <textarea id="debugComment" placeholder="Kommentar zu dieser Frage …"></textarea>
+
+  <div class="debugShotBar">
+   <button id="debugShotBtn" type="button">Screenshot</button>
+   <span id="debugShotCount">0 Bilder</span>
+  </div>
+  <div id="debugShots" class="debugShots"></div>
+
+  <div class="debugNav">
+   <button id="debugPrevBtn" type="button">← Zurück</button>
+   <button id="debugNextBtn" type="button">Weiter →</button>
+  </div>
+ </div>
+
+ <div id="debugFinishView" class="hidden">
+  <h2>Test abgeschlossen</h2>
+  <p id="debugSummary"></p>
+  <textarea id="debugOverallComment" placeholder="Gesamtkommentar …"></textarea>
+  <div class="debugFinishButtons">
+   <button id="debugReportBtn" type="button">Report herunterladen</button>
+   <button id="debugShareBtn" type="button">Report teilen</button>
+   <button id="debugImageBtn" type="button">Report als JPG</button>
+   <button id="debugRestartBtn" type="button">Test neu starten</button>
+  </div>
+ </div>
+</section>
 
 <section id="sheet">
  <div id="handle"><span></span></div>

@@ -15,7 +15,23 @@ function base64ToBytes(s){
  for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);
  return out;
 }
-async function fetchBinaryMaybeChunked(url){
+async function fetchTextWithTimeout(url,ms=15000){
+ const ctrl=new AbortController();
+ const timer=setTimeout(()=>ctrl.abort(),ms);
+ try{
+  const r=await fetch(url,{cache:"force-cache",signal:ctrl.signal});
+  if(!r.ok)throw new Error(`${url} · HTTP ${r.status}`);
+  return await r.text();
+ }finally{clearTimeout(timer)}
+}
+async function loadBase64ModuleFile(filename){
+ const text=await fetchTextWithTimeout("./"+filename,15000);
+ // macrodata files are intentionally simple: export const NAME="BASE64";
+ const m=text.match(/=\s*"([A-Za-z0-9+/=]+)"\s*;/);
+ if(!m)throw new Error(`${filename} · ungültige Makrodatei`);
+ return base64ToBytes(m[1]);
+}
+async function fetchBinaryMaybeChunked(url,onPart){
  const filename=url.split("/").pop(),info=MACRO_TEXT_MANIFEST[filename];
  if(!info){
   const r=await fetch(url,{cache:"force-cache"});
@@ -23,18 +39,21 @@ async function fetchBinaryMaybeChunked(url){
   return await r.arrayBuffer();
  }
  const out=new Uint8Array(info.size);let off=0;
- for(const encoded of info.parts){
-  const bytes=base64ToBytes(encoded);out.set(bytes,off);off+=bytes.length;
+ for(let i=0;i<info.parts.length;i++){
+  const bytes=await loadBase64ModuleFile(info.parts[i]);
+  out.set(bytes,off);off+=bytes.length;
+  if(onPart)onPart(i+1,info.parts.length);
   await new Promise(resolve=>setTimeout(resolve,0));
  }
  return out.buffer;
 }
 
+
 const N=13380;
 let exactChunks=[];
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.01,100);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance",preserveDrawingBuffer:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
 document.querySelector("#viewport").appendChild(renderer.domElement);
 
@@ -315,7 +334,7 @@ function updateBody(){
  // target weight = product of every macro-variable token encoded in the target filename/path.
  // This covers macrodetails (gender/age/race), universal (gender/age/muscle/weight),
  // height, body proportions and breast macro targets in one common engine.
- for(const t of EXACT_META){
+ if(exactChunks.length===EXACT_CHUNKS.length) for(const t of EXACT_META){
    let a=1;
    for(const token of t.tokens){a*=fv[token]??1;if(a===0)break;}
    if(!a)continue;
@@ -454,24 +473,61 @@ function applyPose(name){
 }
 
 async function init(){
- exactChunks=await Promise.all(EXACT_CHUNKS.map(async url=>{
-   const buf=await fetchBinaryMaybeChunked(url);
-   return new Float32Array(buf);
- }));
- const r=await fetch("./base.obj",{cache:"force-cache"});if(!r.ok)throw new Error("base.obj");
+ const loading=document.querySelector("#loading");
+ const loadingStrong=loading.querySelector("strong");
+ const loadingSmall=loading.querySelector("small");
+
+ // 1) Render the local body and rig first. The user should never stare at an empty scene
+ // while tens of MB of macro data are being decoded.
+ loadingStrong.textContent="Basismodell lädt …";
+ loadingSmall.textContent="Mesh + MakeHuman Rig";
+
+ const r=await fetch("./base.obj",{cache:"force-cache"});
+ if(!r.ok)throw new Error("base.obj · HTTP "+r.status);
  const g=parseOBJ(await r.text());g.computeBoundingBox();let b=g.boundingBox;
  scaleFactor=1.82/(b.max.y-b.min.y);g.scale(scaleFactor,scaleFactor,scaleFactor);g.computeBoundingBox();b=g.boundingBox;
  geomCenterX=(b.min.x+b.max.x)/2;geomCenterZ=(b.min.z+b.max.z)/2;geomMinY=b.min.y;
  g.translate(-geomCenterX,-geomMinY,-geomCenterZ);g.computeBoundingBox();base=new Float32Array(g.attributes.position.array);
  body=new THREE.SkinnedMesh(g,new THREE.MeshPhysicalMaterial({color:0xd8ccc4,roughness:.63,metalness:0,clearcoat:.02,flatShading:false,side:THREE.DoubleSide,skinning:true}));
- scene.add(body);buildSkinning(g);frame();updateBody();applyPose("neutral");document.querySelector("#loading").classList.add("done");
+ scene.add(body);buildSkinning(g);frame();updateBody();applyPose("neutral");
+
+ loadingStrong.textContent="Körper ist bereit";
+ loadingSmall.textContent="Grundkörper-Makros laden im Hintergrund · 0 / 6";
+
+ // Allow the first frame to paint before starting macro downloads.
+ await new Promise(resolve=>setTimeout(resolve,80));
+
+ // 2) Load only six macro containers, but their text pieces are fetched dynamically.
+ exactChunks=[];
+ for(let ci=0;ci<EXACT_CHUNKS.length;ci++){
+   const label=`${ci+1} / ${EXACT_CHUNKS.length}`;
+   loadingStrong.textContent="MakeHuman-Grundkörper lädt …";
+   loadingSmall.textContent=`Makropaket ${label}`;
+   const buf=await fetchBinaryMaybeChunked(EXACT_CHUNKS[ci],(part,total)=>{
+     loadingSmall.textContent=`Makropaket ${label} · Teil ${part}/${total}`;
+   });
+   exactChunks.push(new Float32Array(buf));
+   // Update after every container so progress is visible and memory pressure is staggered.
+   updateBody();
+   await new Promise(resolve=>setTimeout(resolve,25));
+ }
+
+ updateBody();
+ loadingStrong.textContent="Body Lab bereit";
+ loadingSmall.textContent="Mesh · Rig · MakeHuman-Makros geladen";
+ setTimeout(()=>loading.classList.add("done"),450);
 }
 function frame(){
  body.geometry.computeBoundingBox();const b=body.geometry.boundingBox,s=new THREE.Vector3(),c=new THREE.Vector3();b.getSize(s);b.getCenter(c);orbit.target.copy(c);
  const vf=THREE.MathUtils.degToRad(camera.fov),hf=2*Math.atan(Math.tan(vf/2)*Math.max(.42,innerWidth/innerHeight));
  const d=Math.max((s.y*.73)/Math.tan(vf/2),(s.x*.70)/Math.tan(hf/2),4.7);camera.position.set(c.x,c.y,c.z+d);orbit.maxDistance=Math.max(35,d*7);orbit.update();
 }
-init().catch(e=>{document.querySelector("#loading strong").textContent="Ladefehler";document.querySelector("#loading small").textContent=String(e)});
+init().catch(e=>{
+ const l=document.querySelector("#loading");
+ l.querySelector("strong").textContent=body?"Makrodaten-Ladefehler":"Ladefehler";
+ l.querySelector("small").textContent=(e?.name==="AbortError"?"Timeout · ": "")+String(e?.message||e);
+ console.error(e);
+});
 
 document.querySelectorAll("[data-pose]").forEach(b=>b.addEventListener("click",()=>applyPose(b.dataset.pose)));
 
@@ -587,6 +643,270 @@ document.querySelector("#reset").addEventListener("click",()=>{
  document.querySelectorAll("#presets button").forEach(b=>b.classList.toggle("active",b.dataset.preset==="neutral"));
  updateBody();applyPose("neutral");
 });
+
+// ================================================================
+// v2.6.4 GUIDED DEBUG / REPORT MODE
+// Mirrors the Harness Designer guided report workflow:
+// pass/fail/skip, per-question comments, multiple screenshots,
+// persistent current question, HTML report, share fallback, JPG report.
+// ================================================================
+const DEBUG_STORAGE_KEY="bodylab_v263_guided_debug";
+const DEBUG_BUILD="BODY LAB v2.6.4 · GUIDED DEBUG";
+
+const DEBUG_QUESTIONS=[
+ {title:"Build / Laden",text:"Lädt Body Lab vollständig? Verschwindet der Ladehinweis und bleibt die App anschließend stabil bedienbar?"},
+ {title:"MakeHuman-Makrodaten",text:"Sind Grundkörper und Presets nach dem Laden verfügbar, ohne dass ein Ladefehler oder ein dauerhaft leerer Körper erscheint?"},
+ {title:"Male Average ↔ Female Average",text:"Preset Male Average und danach Female Average testen. Sind die Grundkörper deutlich voneinander unterscheidbar?"},
+ {title:"Gender · Körper",text:"Female ↔ Male von 0 auf 100 bewegen. Ändert sich der gesamte Körper plausibel und nicht nur ein einzelner Bereich?"},
+ {title:"Gender · Gesicht",text:"Ändert sich der Gesamteindruck des Kopfes/Gesichts beim Gender-Wechsel plausibel? Falls nicht: Screenshot Front + Side."},
+ {title:"Weight",text:"Weight 0 → 50 → 100 testen. Werden mehrere Körperregionen gemeinsam und ohne auffällige Artefakte verändert?"},
+ {title:"Muscle",text:"Muscle 0 → 50 → 100 testen. Ist die Änderung als zusammenhängende Muskel-/Körperform erkennbar?"},
+ {title:"Height",text:"Height Minimum → Mitte → Maximum testen. Verändert sich die Körperhöhe korrekt, ohne das Mesh zu zerstören?"},
+ {title:"Body Proportions",text:"Body Proportions 0 → 50 → 100 testen. Ist eine nachvollziehbare Änderung zwischen Torso-/Gliedmaßenproportionen sichtbar?"},
+ {title:"Breast Size / Firmness",text:"Breast Size und Breast Firmness getrennt testen. Ändert Size wirklich die Brustform statt nur den ganzen Brustkorb?"},
+ {title:"Advanced · Körpermodifier",text:"Mindestens fünf Advanced-Körperparameter aus unterschiedlichen Gruppen testen (z.B. Hüfte, Gesäß, Oberschenkel, Schulter, Bauch). Wirken sie auf die erwarteten Regionen?"},
+ {title:"Advanced · Face / Head",text:"Mehrere Face-/Head-Regler testen. Sind die Effekte sichtbar und lokal plausibel?"},
+ {title:"Globale Min/Max + Overdrive",text:"Globale Grenzen z.B. −100/+140 anwenden und anschließend einen Detailparameter über 100 % testen. Funktioniert die Extrapolation?"},
+ {title:"Bottom-Sheet frei bewegen",text:"Fenster ganz hoch, mittig und sehr weit runter ziehen. Bleibt es exakt dort, wo du es loslässt, und lässt es sich immer wieder greifen?"},
+ {title:"Scroll bis zum Ende",text:"Bottom-Sheet klein machen und innerhalb des Fensters bis zum allerletzten Advanced-Parameter scrollen. Ist wirklich alles erreichbar?"},
+ {title:"3D-Steuerung",text:"1 Finger drehen, 2 Finger verschieben und Pinch-Zoom testen. Reicht Zoom-out für den ganzen Körper?"},
+ {title:"Rig geladen",text:"Wird der MakeHuman-Rig-Status als aktiv angezeigt und bleibt der Körper in Neutral unverändert?"},
+ {title:"Pose · Arms down",text:"Arms down aktivieren. Bewegen sich Arme/Schultern anatomisch plausibel? Besonders Achsel, Ellbogen und Handgelenke prüfen."},
+ {title:"Pose · Arms up",text:"Arms up aktivieren. Bleiben Schulter/Achsel/Mesh geschlossen und plausibel?"},
+ {title:"Pose · Step",text:"Step aktivieren. Beugen und drehen sich Beine/Knie sinnvoll, ohne explodierende Vertices oder extreme Falten?"},
+ {title:"Morph → Pose",text:"Zuerst Körperform stark verändern (Weight/Muscle/Hüfte), danach Pose aktivieren. Bleibt die geänderte Körperform korrekt erhalten?"},
+ {title:"Pose → Morph",text:"Zuerst Pose aktivieren, danach Weight/Muscle oder einen Detailmorph verändern. Bleibt die Pose stabil und aktualisiert sich das Mesh korrekt?"},
+ {title:"Stabilität / Performance",text:"Mehrere Presets, Morphs und Posen nacheinander testen. Gibt es starke Hänger, Abstürze, Reloads oder deutlich zunehmende Verzögerung?"},
+ {title:"Debug · Kommentar + mehrere Screenshots",text:"Kommentar schreiben, mindestens zwei Screenshots machen, Debug schließen, Modell bewegen und wieder öffnen. Frage, Kommentar und Bilder müssen erhalten bleiben."},
+ {title:"Report teilen + Bilder",text:"Abschlussseite erreichen und HTML-Report/Teilen testen. Kommentare und Screenshots müssen im Report enthalten sein."},
+ {title:"Report als JPG + Abschluss",text:"Report als JPG erzeugen. Ist die Zusammenfassung mit Status/Kommentaren lesbar und kann sie anschließend hier hochgeladen werden?"}
+];
+
+function debugEmptyState(){
+ return {
+   index:0,
+   answers:DEBUG_QUESTIONS.map(()=>({status:null,comment:"",shots:[]})),
+   overall:"",
+   finished:false
+ };
+}
+let debugState=debugEmptyState();
+
+function debugLoad(){
+ try{
+   const raw=localStorage.getItem(DEBUG_STORAGE_KEY);
+   if(raw){
+     const x=JSON.parse(raw);
+     if(x && Array.isArray(x.answers) && x.answers.length===DEBUG_QUESTIONS.length){
+       debugState=x;
+     }
+   }
+ }catch(_){}
+}
+function debugSave(){
+ try{localStorage.setItem(DEBUG_STORAGE_KEY,JSON.stringify(debugState));}catch(_){}
+}
+debugLoad();
+
+const dbgPanel=document.querySelector("#debugPanel");
+const dbgOpen=document.querySelector("#debugOpenBtn");
+const dbgHide=document.querySelector("#debugHideBtn");
+const dbgQView=document.querySelector("#debugQuestionView");
+const dbgFinish=document.querySelector("#debugFinishView");
+const dbgComment=document.querySelector("#debugComment");
+const dbgShots=document.querySelector("#debugShots");
+
+function debugRender(){
+ const n=DEBUG_QUESTIONS.length;
+ if(debugState.finished || debugState.index>=n){
+   dbgQView.classList.add("hidden");
+   dbgFinish.classList.remove("hidden");
+   const c={pass:0,fail:0,skip:0,open:0};
+   for(const a of debugState.answers){
+     if(a.status)c[a.status]++; else c.open++;
+   }
+   document.querySelector("#debugProgress").textContent="Abschluss";
+   document.querySelector("#debugSummary").textContent=
+     `Pass ${c.pass} · Fail ${c.fail} · Skip ${c.skip} · Offen ${c.open}`;
+   document.querySelector("#debugOverallComment").value=debugState.overall||"";
+   return;
+ }
+ dbgFinish.classList.add("hidden");
+ dbgQView.classList.remove("hidden");
+ const i=((debugState.index%n)+n)%n;
+ debugState.index=i;
+ const q=DEBUG_QUESTIONS[i],a=debugState.answers[i];
+ document.querySelector("#debugProgress").textContent=`${i+1} / ${n}`;
+ document.querySelector("#debugQuestionNo").textContent=`FRAGE ${i+1}`;
+ document.querySelector("#debugQuestionTitle").textContent=q.title;
+ document.querySelector("#debugQuestionText").textContent=q.text;
+ dbgComment.value=a.comment||"";
+ document.querySelectorAll("[data-debug-status]").forEach(b=>
+   b.classList.toggle("selected",b.dataset.debugStatus===a.status)
+ );
+ debugRenderShots();
+}
+function debugRenderShots(){
+ const a=debugState.answers[debugState.index];
+ dbgShots.innerHTML="";
+ (a.shots||[]).forEach((src,idx)=>{
+   const d=document.createElement("div");d.className="debugShot";
+   const im=document.createElement("img");im.src=src;
+   const del=document.createElement("button");del.type="button";del.textContent="×";
+   del.addEventListener("click",()=>{
+     a.shots.splice(idx,1);debugSave();debugRenderShots();
+   });
+   d.append(im,del);dbgShots.append(d);
+ });
+ document.querySelector("#debugShotCount").textContent=`${(a.shots||[]).length} Bilder`;
+}
+function debugStoreComment(){
+ if(debugState.finished)return;
+ debugState.answers[debugState.index].comment=dbgComment.value;
+ debugSave();
+}
+dbgComment.addEventListener("input",debugStoreComment);
+
+document.querySelectorAll("[data-debug-status]").forEach(b=>b.addEventListener("click",()=>{
+ debugStoreComment();
+ debugState.answers[debugState.index].status=b.dataset.debugStatus;
+ debugSave();debugRender();
+}));
+
+dbgOpen.addEventListener("click",()=>{dbgPanel.classList.remove("hidden");debugRender()});
+dbgHide.addEventListener("click",()=>{debugStoreComment();dbgPanel.classList.add("hidden");debugSave()});
+
+document.querySelector("#debugPrevBtn").addEventListener("click",()=>{
+ debugStoreComment();
+ // Harness behavior: from question 1, Back wraps to the last question.
+ debugState.index=(debugState.index-1+DEBUG_QUESTIONS.length)%DEBUG_QUESTIONS.length;
+ debugSave();debugRender();
+});
+document.querySelector("#debugNextBtn").addEventListener("click",()=>{
+ debugStoreComment();
+ if(debugState.index===DEBUG_QUESTIONS.length-1){
+   debugState.finished=true;
+ }else debugState.index++;
+ debugSave();debugRender();
+});
+
+function debugCanvasShot(){
+ // Captures the 3D viewport only, intentionally excluding the debug UI.
+ try{
+   renderer.render(scene,camera);
+   return renderer.domElement.toDataURL("image/jpeg",.78);
+ }catch(e){return null}
+}
+document.querySelector("#debugShotBtn").addEventListener("click",()=>{
+ debugStoreComment();
+ const shot=debugCanvasShot();
+ if(shot){
+   const a=debugState.answers[debugState.index];
+   if(!a.shots)a.shots=[];
+   a.shots.push(shot);
+   debugSave();debugRenderShots();
+ }
+});
+
+document.querySelector("#debugOverallComment").addEventListener("input",e=>{
+ debugState.overall=e.target.value;debugSave();
+});
+
+function escHtml(s){
+ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function debugStatusSymbol(s){
+ return s==="pass"?"✓":s==="fail"?"✕":s==="skip"?"→":"○";
+}
+function buildDebugReportHtml(){
+ const lines=DEBUG_QUESTIONS.map((q,i)=>{
+   const a=debugState.answers[i];
+   const imgs=(a.shots||[]).map((src,j)=>`<img src="${src}" alt="Screenshot ${j+1} ${i+1} · ${escHtml(q.title)}">`).join("");
+   return `<section><h2>${i+1} · ${escHtml(q.title)}</h2>
+    <p><b>Status:</b> ${escHtml(a.status||"open")}</p>
+    ${a.comment?`<p><b>Kommentar:</b> ${escHtml(a.comment)}</p>`:""}
+    <div class="shots">${imgs}</div></section>`;
+ }).join("");
+ const summary=DEBUG_QUESTIONS.map((q,i)=>{
+   const a=debugState.answers[i];
+   return `${debugStatusSymbol(a.status)} ${i+1} · ${q.title}${a.comment?" — "+a.comment:""}`;
+ }).join("\n");
+ return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>${DEBUG_BUILD}</title><style>
+ body{font:14px system-ui;max-width:900px;margin:auto;padding:24px;color:#111;background:#fff}
+ pre{white-space:pre-wrap;background:#f4f4f4;padding:12px}
+ section{padding:16px 0;border-bottom:1px solid #ccc}
+ .shots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ img{display:block;width:100%;max-height:700px;object-fit:contain;border:1px solid #999}
+ </style></head><body><h1>${DEBUG_BUILD}</h1>
+ <pre>${escHtml(summary)}</pre>
+ ${debugState.overall?`<section><h2>Gesamtkommentar</h2><p>${escHtml(debugState.overall)}</p></section>`:""}
+ ${lines}</body></html>`;
+}
+function downloadBlob(blob,name){
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+document.querySelector("#debugReportBtn").addEventListener("click",()=>{
+ const html=buildDebugReportHtml();
+ downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.6.4-GUIDED-report.html");
+});
+document.querySelector("#debugShareBtn").addEventListener("click",async()=>{
+ const html=buildDebugReportHtml();
+ const file=new File([html],"Body-Lab-v2.6.4-GUIDED-report.html",{type:"text/html"});
+ try{
+   if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+     await navigator.share({title:DEBUG_BUILD,files:[file]});
+   }else{
+     downloadBlob(file,file.name);
+   }
+ }catch(_){}
+});
+
+function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+ const words=String(text||"").split(/\s+/);let line="";
+ for(const word of words){
+   const test=line?line+" "+word:word;
+   if(ctx.measureText(test).width>maxWidth && line){
+     ctx.fillText(line,x,y);y+=lineHeight;line=word;
+   }else line=test;
+ }
+ if(line){ctx.fillText(line,x,y);y+=lineHeight}
+ return y;
+}
+document.querySelector("#debugImageBtn").addEventListener("click",()=>{
+ // Compact, copy-friendly report image (status + comments).
+ const W=1400,pad=70,line=31;
+ const estimated=260+DEBUG_QUESTIONS.length*95+
+   debugState.answers.reduce((n,a)=>n+Math.ceil((a.comment||"").length/70)*line,0);
+ const H=Math.max(1800,estimated);
+ const c=document.createElement("canvas");c.width=W;c.height=H;
+ const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);
+ x.fillStyle="#111";x.font="bold 40px system-ui";x.fillText(DEBUG_BUILD,pad,75);
+ let y=125;x.font="23px system-ui";
+ for(let i=0;i<DEBUG_QUESTIONS.length;i++){
+   const q=DEBUG_QUESTIONS[i],a=debugState.answers[i];
+   x.font="bold 23px system-ui";x.fillStyle="#111";
+   y=wrapText(x,`${debugStatusSymbol(a.status)} ${i+1} · ${q.title}`,pad,y,W-pad*2,line);
+   if(a.comment){
+     x.font="20px system-ui";x.fillStyle="#444";
+     y=wrapText(x,a.comment,pad+28,y,W-pad*2-28,line);
+   }
+   y+=22;
+ }
+ if(debugState.overall){
+   x.font="bold 25px system-ui";x.fillStyle="#111";x.fillText("Gesamtkommentar",pad,y);y+=38;
+   x.font="20px system-ui";x.fillStyle="#444";wrapText(x,debugState.overall,pad,y,W-pad*2,line);
+ }
+ c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.6.4-GUIDED-report.jpg"),"image/jpeg",.9);
+});
+
+document.querySelector("#debugRestartBtn").addEventListener("click",()=>{
+ if(!confirm("Guided Test wirklich zurücksetzen?"))return;
+ debugState=debugEmptyState();debugSave();debugRender();
+});
+
 function resize(){
  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
  renderer.setSize(innerWidth,innerHeight,false);
