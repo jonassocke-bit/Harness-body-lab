@@ -399,7 +399,7 @@ function computeLiveMetrics(){
    q.real.textContent=Number.isFinite(cm)?`${cm.toFixed(1)} cm`:"";
   }else q.real.textContent="";
  }
- refreshRevisionAutoValue?.();
+ 
 }
 function scheduleLiveMetrics(){
  clearTimeout(metricTimer);metricTimer=setTimeout(computeLiveMetrics,120);
@@ -691,13 +691,13 @@ document.querySelector("#reset").addEventListener("click",()=>{
 });
 
 // ================================================================
-// v2.7.5 GUIDED DEBUG / REPORT MODE
+// v2.7.7 GUIDED DEBUG / REPORT MODE
 // Mirrors the Harness Designer guided report workflow:
 // pass/fail/skip, per-question comments, multiple screenshots,
 // persistent current question, HTML report, share fallback, JPG report.
 // ================================================================
 const DEBUG_STORAGE_KEY="bodylab_v263_guided_debug";
-const DEBUG_BUILD="BODY LAB v2.7.5 · GUIDED DEBUG";
+const DEBUG_BUILD="BODY LAB v2.7.7 · GUIDED DEBUG";
 
 const DEBUG_QUESTIONS=[
  {title:"Build / Laden",text:"Lädt Body Lab vollständig? Verschwindet der Ladehinweis und bleibt die App anschließend stabil bedienbar?"},
@@ -896,11 +896,11 @@ function downloadBlob(blob,name){
 }
 document.querySelector("#debugReportBtn").addEventListener("click",()=>{
  const html=buildDebugReportHtml();
- downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.7.5-GUIDED-report.html");
+ downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.7.7-GUIDED-report.html");
 });
 document.querySelector("#debugShareBtn").addEventListener("click",async()=>{
  const html=buildDebugReportHtml();
- const file=new File([html],"Body-Lab-v2.7.5-GUIDED-report.html",{type:"text/html"});
+ const file=new File([html],"Body-Lab-v2.7.7-GUIDED-report.html",{type:"text/html"});
  try{
    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
      await navigator.share({title:DEBUG_BUILD,files:[file]});
@@ -945,7 +945,7 @@ document.querySelector("#debugImageBtn").addEventListener("click",()=>{
    x.font="bold 25px system-ui";x.fillStyle="#111";x.fillText("Gesamtkommentar",pad,y);y+=38;
    x.font="20px system-ui";x.fillStyle="#444";wrapText(x,debugState.overall,pad,y,W-pad*2,line);
  }
- c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.7.5-GUIDED-report.jpg"),"image/jpeg",.9);
+ c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.7.7-GUIDED-report.jpg"),"image/jpeg",.9);
 });
 
 document.querySelector("#debugRestartBtn").addEventListener("click",()=>{
@@ -986,72 +986,7 @@ document.querySelector("#saveCustomPreset").onclick=()=>{
 };
 renderUserPresets();
 
-// ===== Revision / calibration + UI relevance =====
-const REV_KEY="bodylab_v270_revision",MARK_KEY="bodylab_v270_calmarks";
-let revConfig={};try{revConfig=JSON.parse(localStorage.getItem(REV_KEY)||"{}")}catch(_){}
-let revMarks=[];try{revMarks=JSON.parse(localStorage.getItem(MARK_KEY)||"[]")}catch(_){}
-function saveRev(){localStorage.setItem(REV_KEY,JSON.stringify(revConfig));localStorage.setItem(MARK_KEY,JSON.stringify(revMarks))}
-const revSelect=document.querySelector("#revParameter");
-function populateRevisionOptions(){
- revSelect.innerHTML="";
- for(const [id,q] of ui){
-  const o=document.createElement("option");o.value=id;o.textContent=`${q.labelEl.textContent} · ${id}`;revSelect.append(o);
- }
-}
-function defaultTier(id){return ["gender","age","weight","muscle","height","proportions","breastSize","breastFirmness"].includes(id)?"main":"advanced"}
-function applyRevisionLayout(){
- let fine=0,main=0;
- for(const [id,q] of ui){
-  const c=revConfig[id]||{};
-  if(c.label)q.labelEl.textContent=c.label;
-  const tier=c.tier||defaultTier(id);
-  // Core controls already live in main basic panel. Advanced controls can be promoted.
-  const isCore=q.homeParent?.id==="coreControls";
-  if(isCore)continue;
-  if(tier==="main"){document.querySelector("#mainExtraControls").append(q.wrap);main++}
-  else if(tier==="fine"){document.querySelector("#fineControls").append(q.wrap);fine++}
-  else q.homeParent.append(q.wrap);
- }
- document.querySelector("#mainExtraSection").classList.toggle("hidden",main===0);
- document.querySelector("#fineSection").classList.toggle("hidden",fine===0);
- document.querySelector("#fineCount").textContent=fine;
-}
-function suggestedUnit(id,q){
- if(id==="weight")return "kg";if(id==="height")return "cm";if(id==="age")return "Jahre";
- if(q?.target && MEASURE_RULERS[q.target])return "cm";return "";
-}
-function autoValueFor(id){
- const q=ui.get(id);if(!q)return "";
- if(id==="weight"&&liveMetrics.weightKg)return `${liveMetrics.weightKg.toFixed(1)} kg`;
- if(id==="height"&&liveMetrics.heightCm)return `${liveMetrics.heightCm.toFixed(1)} cm`;
- if(id==="age")return `${ageYears(state.age).toFixed(0)} Jahre`;
- if(q.target&&liveMetrics.measures?.[q.target])return `${liveMetrics.measures[q.target].toFixed(1)} cm`;
- return `${q.out.textContent}`;
-}
-function loadRevisionForm(){
- const id=revSelect.value,q=ui.get(id);if(!q)return;
- const c=revConfig[id]||{};
- document.querySelector("#revTier").value=c.tier||defaultTier(id);
- document.querySelector("#revLabel").value=c.label||q.labelEl.textContent;
- document.querySelector("#revNote").value=c.note||"";
- document.querySelector("#revUnit").value=c.unit??suggestedUnit(id,q);
- document.querySelector("#revReference").value="";
- refreshRevisionAutoValue();
- renderRevisionMarks();
-}
-function refreshRevisionAutoValue(){
- if(!revSelect)return;const id=revSelect.value;if(!id)return;
- const el=document.querySelector("#revAutoValue");if(el)el.textContent=`Aktueller berechneter/technischer Wert: ${autoValueFor(id)}`;
-}
-function renderRevisionMarks(){
- const h=document.querySelector("#revMarks");h.innerHTML="";
- revMarks.filter(m=>m.id===revSelect.value).forEach(m=>{
-  const d=document.createElement("div");d.className="revMark";
-  d.innerHTML=`<strong>${m.reference}${m.unit?" "+m.unit:""}</strong><br>${m.autoValue||""}${m.note?" · "+m.note:""}`;
-  h.append(d);
- });
-}
-document.querySelector("#revOpenBtn").onclick=()=>{populateRevisionOptions();applyRevisionLayout();document.querySelector("#revPanel").classList.remove("hidden");loadRevisionForm()};
+document.querySelector("#revPanel").classList.remove("hidden");loadRevisionForm()};
 document.querySelector("#revCloseBtn").onclick=()=>document.querySelector("#revPanel").classList.add("hidden");
 revSelect.onchange=loadRevisionForm;
 document.querySelector("#revApplyBtn").onclick=()=>{
@@ -1067,10 +1002,39 @@ document.querySelector("#revMarkBtn").onclick=()=>{
 };
 document.querySelector("#revClearMarksBtn").onclick=()=>{if(confirm("Alle Kalibrierungsmarken löschen?")){revMarks=[];saveRev();renderRevisionMarks()}};
 document.querySelector("#revExportBtn").onclick=()=>{
- const payload={build:"BODY LAB v2.7.5",exportedAt:new Date().toISOString(),ui:revConfig,marks:revMarks,userPresets:Object.keys(userPresets)};
- const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="Body-Lab-v2.7.5-REVISION.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);
+ const payload={build:"BODY LAB v2.7.7",exportedAt:new Date().toISOString(),ui:revConfig,marks:revMarks,userPresets:Object.keys(userPresets)};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="Body-Lab-v2.7.7-REVISION.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);
 };
 populateRevisionOptions();applyRevisionLayout();
+
+
+// Minimal public bridge for the separate revision.js module.
+// Keeping revision UI out of app.js prevents optional tooling from breaking rendering.
+window.BodyLabBridge={
+ getControls:function(){return ui;},
+ getState:function(){
+  return {
+   core:JSON.parse(JSON.stringify(state)),
+   direct:Object.assign({},directState),
+   face:Object.assign({},faceState)
+  };
+ },
+ getMetrics:function(){
+  return (typeof liveMetrics!=="undefined")?JSON.parse(JSON.stringify(liveMetrics)):{};
+ },
+ getMeasureRulers:function(){
+  return (typeof MEASURE_RULERS!=="undefined")?MEASURE_RULERS:{};
+ },
+ update:function(){updateBody();},
+ controlValue:function(id){
+  var q=ui.get(id);
+  if(!q)return null;
+  return {value:Number(q.inp.value),min:Number(q.inp.min),max:Number(q.inp.max),
+          technical:q.out?q.out.textContent:"",real:q.real?q.real.textContent:"",
+          target:q.target||"",label:q.labelEl?q.labelEl.textContent:id};
+ }
+};
+window.dispatchEvent(new Event("bodylab-ready"));
 
 function resize(){
  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();

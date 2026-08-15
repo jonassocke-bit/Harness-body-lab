@@ -288,3 +288,126 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
   text-align:right;
   white-space:nowrap;
 }
+
+/* v2.7.6 — CSS-only fix for right value column.
+   Keep all value content inside the actual sheet width. */
+#sheet,
+#scroll,
+.basicPanel,
+.controlWrap,
+.control{
+  box-sizing:border-box;
+  max-width:100%;
+}
+
+#scroll{
+  width:100%;
+  overflow-x:hidden;
+  padding-left:12px;
+  padding-right:12px;
+}
+
+.basicPanel{
+  width:100%;
+  overflow:hidden;
+}
+
+.controlWrap{
+  width:100%;
+  overflow:hidden;
+}
+
+.control{
+  display:grid;
+  width:100%;
+  grid-template-columns:minmax(92px,108px) minmax(0,1fr) 54px !important;
+  column-gap:7px !important;
+  align-items:center;
+  padding-left:0;
+  padding-right:0;
+  overflow:hidden;
+}
+
+.control label{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.control input[type="range"]{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+
+.valueStack{
+  width:54px !important;
+  min-width:54px !important;
+  max-width:54px !important;
+  justify-self:end;
+  align-items:flex-end;
+  overflow:hidden !important;
+}
+
+.valueBtn{
+  display:block;
+  width:54px !important;
+  min-width:0 !important;
+  max-width:54px !important;
+  height:20px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  text-align:right !important;
+  font-size:9px !important;
+  line-height:20px !important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:clip;
+}
+
+.realValue{
+  display:block;
+  width:54px !important;
+  min-width:0 !important;
+  max-width:54px !important;
+  margin:0 !important;
+  padding:0 !important;
+  text-align:right !important;
+  font-size:7px !important;
+  line-height:10px !important;
+  white-space:nowrap;
+  overflow:hidden !important;
+}
+
+/* The core panel has its own earlier grid rule; force the same safe columns there too. */
+.basicPanel .control{
+  grid-template-columns:minmax(92px,108px) minmax(0,1fr) 54px !important;
+}
+
+/* v2.7.7 optional inline Revision lives in revision.js */
+.inlineRevision{
+ display:none;
+ margin:0 3px 7px;padding:7px;
+ border-top:1px solid rgba(255,255,255,.06);
+ background:rgba(255,255,255,.025);border-radius:0 0 8px 8px
+}
+body.revisionMode .inlineRevision{display:block}
+.inlineRevision .irTwo{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.inlineRevision label{display:block;font-size:8px;color:#8e8e95;margin-bottom:6px}
+.inlineRevision select,.inlineRevision input,.inlineRevision textarea{
+ display:block;width:100%;box-sizing:border-box;margin-top:3px;
+ border:1px solid rgba(255,255,255,.09);background:#252528;color:#fff;
+ border-radius:7px;padding:6px;font:inherit;font-size:9px
+}
+.inlineRevision textarea{min-height:40px;resize:vertical}
+.inlineRevision .irAuto{font-size:8px;color:#aaa;background:#19191b;border-radius:7px;padding:6px;margin-bottom:6px}
+.inlineRevision .irBtns{display:flex;gap:6px;flex-wrap:wrap}
+.inlineRevision .irBtns button{font-size:8px;padding:6px 8px}
+#revOpenBtn.active{background:#eee;color:#111}
+.fineSection>summary{display:flex;justify-content:space-between;padding:10px 2px;font-size:12px;font-weight:650}
+.fineSection>summary b{font-size:9px;color:#888}

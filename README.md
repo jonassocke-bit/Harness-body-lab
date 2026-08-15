@@ -176,7 +176,7 @@ Largest file in this build is intentionally kept below typical mobile GitHub web
 All exact macro data is now stored in small UTF-8 JavaScript modules. No macro .bin files remain. This build is intended for iPhone/GitHub mobile upload.
 
 
-## v2.7.5 Guided Debug
+## v2.7.7 Guided Debug
 
 Adds the Harness-Designer-style guided test/report mode:
 - Pass / Fail / Skip per question
@@ -192,7 +192,7 @@ Adds the Harness-Designer-style guided test/report mode:
 - compact JPG report export
 
 
-## v2.7.5 — Safari loading architecture fix
+## v2.7.7 — Safari loading architecture fix
 
 Critical change:
 - `macro-text-manifest.js` no longer imports all 87 `macrodata-*.js` files at module startup.
@@ -207,7 +207,7 @@ Critical change:
 Existing static `macrodata-*.js` files stay in the repository unchanged.
 
 
-## v2.7.5 — unfragmented asset build
+## v2.7.7 — unfragmented asset build
 
 This build intentionally uses the six original exact MakeHuman macro binaries directly.
 No macrodata text fragments, no chunk manifest, and no body-morph JS fragments are used.
@@ -217,7 +217,7 @@ size of one web commit, upload/commit the large files individually (or in small 
 Each individual file in this build remains below GitHub's 25 MiB browser file limit.
 
 
-## v2.7.5 — Measurement + Revision UI
+## v2.7.7 — Measurement + Revision UI
 
 Uses 20 original MakeHuman measurement rulers extracted from
 `plugins/0_modeling_a_measurement.py`.
@@ -240,10 +240,31 @@ Revision mode:
 User presets:
 - Current full body state can be named and saved locally.
 
-## v2.7.5 — stable rollback
+## v2.7.7 — stable rollback
 
 This is the known-working v2.7.0 JavaScript/revision implementation restored.
 The only functional change is CSS that constrains the mobile slider/value columns so
 technical and real-world values remain inside the bottom sheet.
 
 No inline revision JavaScript is included in this build.
+
+## v2.7.7 — value column CSS fix
+
+No JavaScript changes.
+The right-hand technical/real value column is now a fixed 54px grid column inside the sheet.
+The former button background is removed and horizontal overflow is clipped at panel level.
+
+## v2.7.7 — revision module isolation
+
+The stable rendering/model logic stays in `app.js`.
+Inline Revision is implemented in a separate `revision.js` module loaded after the app.
+
+Revision mode:
+- direct editor underneath each slider
+- Main / Fine / Advanced classification
+- editable label, unit and note
+- calibration/reference marks storing current body state and computed value
+- JSON export via long-press/context-menu on the Revision button
+
+If revision.js ever fails, the mannequin/app renderer is unaffected.
+Pose code is intentionally unchanged in this build.
