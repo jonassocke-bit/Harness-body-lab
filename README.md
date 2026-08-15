@@ -215,3 +215,7 @@ No macrodata text fragments, no chunk manifest, and no body-morph JS fragments a
 Upload the files to the repository root. Because GitHub mobile appears to limit the total
 size of one web commit, upload/commit the large files individually (or in small groups).
 Each individual file in this build remains below GitHub's 25 MiB browser file limit.
+
+
+## v2.6.6 Calibration
+Adds a persistent calibration mode for user-defined reference marks and JSON/HTML export.

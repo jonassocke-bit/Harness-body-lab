@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101011">
-<title>Harness Body Lab v2.6.5</title>
+<title>Harness Body Lab v2.6.6</title>
 <link rel="stylesheet" href="./style.css">
 <script type="importmap">
 {"imports":{
@@ -16,14 +16,15 @@
 <body>
 <div id="viewport">
  <div id="loading"><span></span><div><strong>Body Lab MAX lädt…</strong><small>MakeHuman Source 1.3.0</small></div></div>
- <div id="badge">BODY LAB · v2.6.5.1</div>
+ <div id="badge">BODY LAB · v2.6.6.1</div>
   <button id="debugOpenBtn" type="button">Debug Test</button>
+  <button id="calOpenBtn" type="button">Calibration</button>
 </div>
 
 <section id="debugPanel" class="debugPanel hidden" aria-label="Guided Debug Test">
  <div class="debugHead">
   <div>
-   <strong id="debugBuild">BODY LAB v2.6.5 · GUIDED TEST</strong>
+   <strong id="debugBuild">BODY LAB v2.6.6 · GUIDED TEST</strong>
    <small id="debugProgress">1 / 1</small>
   </div>
   <button id="debugHideBtn" type="button">Schließen</button>
@@ -65,6 +66,26 @@
    <button id="debugRestartBtn" type="button">Test neu starten</button>
   </div>
  </div>
+</section>
+
+<section id="calPanel" class="calPanel hidden" aria-label="Calibration Mode">
+ <div class="calHead"><div><strong>BODY LAB v2.6.6 · CALIBRATION</strong><small id="calStatus">0 Marken gespeichert</small></div><button id="calCloseBtn" type="button">Schließen</button></div>
+ <div class="calIntro">Körper einstellen → realen/gewünschten Wert eingeben → Marke speichern. Gespeichert wird der vollständige aktuelle MakeHuman-Zustand.</div>
+ <div class="calGrid">
+  <label>Parameter<select id="calParameter">
+   <option value="weight" data-unit="kg">Gewicht</option><option value="height" data-unit="cm">Größe</option><option value="age" data-unit="Jahre">Alter</option>
+   <option value="waist" data-unit="cm">Taille</option><option value="hips" data-unit="cm">Hüfte</option><option value="chest" data-unit="cm">Brustumfang</option>
+   <option value="underbust" data-unit="cm">Unterbrust</option><option value="thigh" data-unit="cm">Oberschenkel</option><option value="upperarm" data-unit="cm">Oberarm</option>
+   <option value="breast" data-unit="">Brustgröße / Cup</option><option value="muscle" data-unit="">Muskelmasse</option><option value="custom" data-unit="">Eigener Parameter</option>
+  </select></label>
+  <label id="calCustomNameWrap" class="hidden">Name<input id="calCustomName" type="text" placeholder="z. B. Bauchumfang"></label>
+  <label>Referenzwert<div class="calValueLine"><input id="calValue" type="text" inputmode="decimal" placeholder="z. B. 110"><span id="calUnit">kg</span></div></label>
+  <label>Notiz<input id="calNote" type="text" placeholder="optional, z. B. ab hier unrealistisch"></label>
+ </div>
+ <div class="calActions"><button id="calSaveMarkBtn" type="button">Marke speichern</button><button id="calCurrentBtn" type="button">Aktuellen Zustand anzeigen</button></div>
+ <div id="calCurrent" class="calCurrent hidden"></div>
+ <div class="calSectionTitle">Gespeicherte Marken</div><div id="calMarks" class="calMarks"></div>
+ <div class="calFooter"><button id="calExportJsonBtn" type="button">JSON exportieren</button><button id="calExportHtmlBtn" type="button">Report exportieren</button><button id="calClearBtn" type="button">Alle löschen</button></div>
 </section>
 
 <section id="sheet">

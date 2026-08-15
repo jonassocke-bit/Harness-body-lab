@@ -616,13 +616,13 @@ document.querySelector("#reset").addEventListener("click",()=>{
 });
 
 // ================================================================
-// v2.6.5 GUIDED DEBUG / REPORT MODE
+// v2.6.6 GUIDED DEBUG / REPORT MODE
 // Mirrors the Harness Designer guided report workflow:
 // pass/fail/skip, per-question comments, multiple screenshots,
 // persistent current question, HTML report, share fallback, JPG report.
 // ================================================================
 const DEBUG_STORAGE_KEY="bodylab_v263_guided_debug";
-const DEBUG_BUILD="BODY LAB v2.6.5 · GUIDED DEBUG";
+const DEBUG_BUILD="BODY LAB v2.6.6 · GUIDED DEBUG";
 
 const DEBUG_QUESTIONS=[
  {title:"Build / Laden",text:"Lädt Body Lab vollständig? Verschwindet der Ladehinweis und bleibt die App anschließend stabil bedienbar?"},
@@ -821,11 +821,11 @@ function downloadBlob(blob,name){
 }
 document.querySelector("#debugReportBtn").addEventListener("click",()=>{
  const html=buildDebugReportHtml();
- downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.6.5-GUIDED-report.html");
+ downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.6.6-GUIDED-report.html");
 });
 document.querySelector("#debugShareBtn").addEventListener("click",async()=>{
  const html=buildDebugReportHtml();
- const file=new File([html],"Body-Lab-v2.6.5-GUIDED-report.html",{type:"text/html"});
+ const file=new File([html],"Body-Lab-v2.6.6-GUIDED-report.html",{type:"text/html"});
  try{
    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
      await navigator.share({title:DEBUG_BUILD,files:[file]});
@@ -870,13 +870,33 @@ document.querySelector("#debugImageBtn").addEventListener("click",()=>{
    x.font="bold 25px system-ui";x.fillStyle="#111";x.fillText("Gesamtkommentar",pad,y);y+=38;
    x.font="20px system-ui";x.fillStyle="#444";wrapText(x,debugState.overall,pad,y,W-pad*2,line);
  }
- c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.6.5-GUIDED-report.jpg"),"image/jpeg",.9);
+ c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.6.6-GUIDED-report.jpg"),"image/jpeg",.9);
 });
 
 document.querySelector("#debugRestartBtn").addEventListener("click",()=>{
  if(!confirm("Guided Test wirklich zurücksetzen?"))return;
  debugState=debugEmptyState();debugSave();debugRender();
 });
+
+
+const CAL_STORAGE_KEY="bodylab_v266_calibration";
+function calLoad(){try{const x=JSON.parse(localStorage.getItem(CAL_STORAGE_KEY)||"[]");return Array.isArray(x)?x:[]}catch(_){return []}}
+let calMarks=calLoad();
+function calSave(){try{localStorage.setItem(CAL_STORAGE_KEY,JSON.stringify(calMarks))}catch(_){}}
+function cloneSimple(o){return JSON.parse(JSON.stringify(o))}
+function activeOnly(o,eps=.00001){const x={};for(const[k,v]of Object.entries(o)){if(typeof v==="number"&&Math.abs(v)>eps)x[k]=v}return x}
+function captureCalibrationContext(){return{capturedAt:new Date().toISOString(),core:cloneSimple(state),direct:activeOnly(directState),face:activeOnly(faceState),pose:document.querySelector("[data-pose].active")?.dataset?.pose||"neutral",ranges:Object.fromEntries([...ui.entries()].map(([id,q])=>[id,{min:Number(q.inp.min),max:Number(q.inp.max),value:Number(q.inp.value)}]))}}
+function describeCore(c){return [["gender",c.gender],["weight",c.weight],["muscle",c.muscle],["height",c.height],["proportions",c.proportions],["breastSize",c.breastSize],["breastFirmness",c.breastFirmness]].filter(x=>x[1]!==undefined).map(([k,v])=>`${k}=${Math.round(v*100)}%`).join(" · ")}
+const calPanel=document.querySelector("#calPanel"),calParam=document.querySelector("#calParameter"),calValue=document.querySelector("#calValue"),calUnit=document.querySelector("#calUnit"),calNote=document.querySelector("#calNote"),calCustomWrap=document.querySelector("#calCustomNameWrap"),calCustomName=document.querySelector("#calCustomName");
+function calRefreshParamUI(){const o=calParam.selectedOptions[0];calUnit.textContent=o?.dataset?.unit||"";calCustomWrap.classList.toggle("hidden",calParam.value!=="custom")}calParam.addEventListener("change",calRefreshParamUI);calRefreshParamUI();
+function calRender(){document.querySelector("#calStatus").textContent=`${calMarks.length} Marken gespeichert`;const h=document.querySelector("#calMarks");h.innerHTML="";if(!calMarks.length){const e=document.createElement("div");e.className="calCurrent";e.textContent="Noch keine Kalibrierungsmarken.";h.append(e);return}calMarks.slice().reverse().forEach((m,r)=>{const i=calMarks.length-1-r,d=document.createElement("div");d.className="calMark";const t=document.createElement("div");t.className="calMarkTop";const s=document.createElement("strong");s.textContent=`${m.label}: ${m.reference}${m.unit?" "+m.unit:""}`;const b=document.createElement("button");b.type="button";b.textContent="Löschen";b.onclick=()=>{calMarks.splice(i,1);calSave();calRender()};t.append(s,b);const p=document.createElement("p");p.textContent=(m.note?m.note+" · ":"")+describeCore(m.context.core)+` · Advanced aktiv: ${Object.keys(m.context.direct).length} · Face aktiv: ${Object.keys(m.context.face).length}`;d.append(t,p);h.append(d)})}calRender();
+document.querySelector("#calOpenBtn").onclick=()=>{calPanel.classList.remove("hidden");calRender()};document.querySelector("#calCloseBtn").onclick=()=>calPanel.classList.add("hidden");
+document.querySelector("#calSaveMarkBtn").onclick=()=>{const raw=calValue.value.trim();if(!raw){alert("Bitte zuerst einen Referenzwert eingeben.");return}let label=calParam.selectedOptions[0]?.textContent||calParam.value;if(calParam.value==="custom"){label=calCustomName.value.trim();if(!label){alert("Bitte einen Namen eingeben.");return}}calMarks.push({type:calParam.value,label,reference:raw,unit:calUnit.textContent.trim(),note:calNote.value.trim(),context:captureCalibrationContext()});calSave();calRender();calNote.value=""};
+document.querySelector("#calCurrentBtn").onclick=()=>{const c=captureCalibrationContext(),e=document.querySelector("#calCurrent");e.classList.remove("hidden");e.textContent="CORE\n"+JSON.stringify(c.core,null,2)+"\n\nAKTIVE BODY-MORPHS\n"+JSON.stringify(c.direct,null,2)+"\n\nAKTIVE FACE-MORPHS\n"+JSON.stringify(c.face,null,2)+"\n\nPOSE\n"+c.pose};
+function calDownload(blob,name){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
+document.querySelector("#calExportJsonBtn").onclick=()=>{const p={build:"BODY LAB v2.6.6",exportedAt:new Date().toISOString(),count:calMarks.length,marks:calMarks};calDownload(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}),"Body-Lab-v2.6.6-CALIBRATION.json")};
+document.querySelector("#calExportHtmlBtn").onclick=()=>{const rows=calMarks.map((m,i)=>`<section><h2>${i+1}. ${m.label} — ${m.reference} ${m.unit}</h2><p>${m.note||""}</p><pre>${JSON.stringify(m.context,null,2)}</pre></section>`).join("");calDownload(new Blob([`<!doctype html><meta charset="utf-8"><title>Body Lab Calibration</title><body><h1>BODY LAB v2.6.6 · CALIBRATION</h1>${rows}</body>`],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.6.6-CALIBRATION-report.html")};
+document.querySelector("#calClearBtn").onclick=()=>{if(confirm("Alle Kalibrierungsmarken wirklich löschen?")){calMarks=[];calSave();calRender()}};
 
 function resize(){
  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
