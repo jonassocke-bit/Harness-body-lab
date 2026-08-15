@@ -7,6 +7,7 @@ import { GROUP_LABELS } from "./labels.js";
 import { FACE_GROUPS } from "./face-config.js";
 import { FACE } from "./face-morphs.js";
 import { RIG } from "./rig-data.js";
+import { MEASURE_RULERS } from "./measurement-data.js";
 
 
 async function fetchBinaryMaybeChunked(url,onPart){
@@ -52,6 +53,12 @@ function humanize(s){
   .replace(/\b\w/g,m=>m.toUpperCase());
 }
 function fmt(v){return (v>0?"+":"")+Math.round(v*100)}
+
+function ageYears(v){
+ if(v<=.5)return 1+48*v;       // MakeHuman 0 -> 1y, .5 -> 25y
+ return 25+130*(v-.5);         // .5 -> 25y, 1 -> 90y
+}
+function pct(v){return `${Math.round(v*100)}%`}
 function makeControl(parent,id,label,min,max,value,handler,display=v=>fmt(v),opts={}){
  const wrap=document.createElement("div");
  wrap.className="controlWrap";
@@ -73,7 +80,10 @@ function makeControl(parent,id,label,min,max,value,handler,display=v=>fmt(v),opt
  out.textContent=display(value);
  out.title=opts.overdrive ? "Antippen: Min/Max ändern" : "Wert";
 
- row.append(lab,inp,out);
+ const valueStack=document.createElement("div");valueStack.className="valueStack";
+ const real=document.createElement("span");real.className="realValue";real.textContent="";
+ valueStack.append(out,real);
+ row.append(lab,inp,valueStack);
  wrap.append(row);
 
  let rangeEditor=null;
@@ -143,19 +153,19 @@ function makeControl(parent,id,label,min,max,value,handler,display=v=>fmt(v),opt
  ui.set(id,{
    inp,out,row,wrap,display,default:value,
    defaultMin:min,defaultMax:max,
-   rangeEditor
+   rangeEditor,real,labelEl:lab,homeParent:parent,target:opts.target||null
  });
 }
 
 const core=document.querySelector("#coreControls");
-makeControl(core,"gender","Female ↔ Male",0,1,.5,v=>{state.gender=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
-makeControl(core,"age","Age",0,1,.5,v=>{state.age=v;updateBody()},v=>Math.round(1 + v*89),{overdrive:false});
-makeControl(core,"weight","Weight",0,1,.5,v=>{state.weight=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
-makeControl(core,"muscle","Muscle",0,1,.5,v=>{state.muscle=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
-makeControl(core,"height","Height",0,1,.5,v=>{state.height=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
-makeControl(core,"proportions","Body proportions",0,1,.5,v=>{state.proportions=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
-makeControl(core,"breastSize","Breast size",0,1,.5,v=>{state.breastSize=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
-makeControl(core,"breastFirmness","Breast firmness",0,1,.5,v=>{state.breastFirmness=v;updateBody()},v=>Math.round(v*100),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"gender","Female ↔ Male",0,1,.5,v=>{state.gender=v;updateBody()},v=>pct(v),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"age","Age",0,1,.5,v=>{state.age=v;updateBody()},v=>pct(v),{overdrive:false});
+makeControl(core,"weight","Weight",0,1,.5,v=>{state.weight=v;updateBody()},v=>pct(v),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"muscle","Muscle",0,1,.5,v=>{state.muscle=v;updateBody()},v=>pct(v),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"height","Height",0,1,.5,v=>{state.height=v;updateBody()},v=>pct(v),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"proportions","Body proportions",0,1,.5,v=>{state.proportions=v;updateBody()},v=>pct(v),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"breastSize","Breast size",0,1,.5,v=>{state.breastSize=v;updateBody()},v=>pct(v),{overdrive:true,rangeMode:"macro"});
+makeControl(core,"breastFirmness","Breast firmness",0,1,.5,v=>{state.breastFirmness=v;updateBody()},v=>pct(v),{overdrive:true,rangeMode:"macro"});
 
 // MakeHuman default ethnicity/population mix is 1/3 each.
 // Changing one keeps the three values normalized to sum to 1, matching EthnicModifier behavior.
@@ -232,7 +242,7 @@ for(const g of GROUPS){
   directState[c.id]=0;directCount++;
   const label=humanize(c.target);
   const min=c.oneWay?0:-1,max=1,def=0;
-  makeControl(body,c.id,label,min,max,def,v=>{directState[c.id]=v;updateBody()},v=>fmt(v),{overdrive:true});
+  makeControl(body,c.id,label,min,max,def,v=>{directState[c.id]=v;updateBody()},v=>fmt(v),{overdrive:true,target:c.target});
  }
  groupsEl.append(det);
 }
@@ -249,7 +259,7 @@ for(const g of FACE_GROUPS){
   faceState[c.id]=0;faceCount++;
   const label=humanize(c.target);
   const min=c.oneWay?0:-1,max=1;
-  makeControl(gb,c.id,label,min,max,0,v=>{faceState[c.id]=v;updateBody()},v=>fmt(v),{overdrive:true});
+  makeControl(gb,c.id,label,min,max,0,v=>{faceState[c.id]=v;updateBody()},v=>fmt(v),{overdrive:true,target:c.target});
  }
  faceGroupsEl.append(det);
 }
@@ -329,7 +339,72 @@ function updateBody(){
  }
  const p=body.geometry.attributes.position;p.array.set(out);p.needsUpdate=true;
  body.geometry.computeVertexNormals();body.geometry.normalizeNormals();body.geometry.computeBoundingSphere();
+ scheduleLiveMetrics();
 }
+
+let metricTimer=null;
+function measureRuler(indices){
+ if(!body||!indices)return NaN;
+ const a=body.geometry.attributes.position.array;
+ let total=0,prev=indices[0];
+ for(const vi of indices){
+  const i=prev*3,j=vi*3;
+  total+=Math.hypot(a[i]-a[j],a[i+1]-a[j+1],a[i+2]-a[j+2]);
+  prev=vi;
+ }
+ return total*100; // our rendered world units are meters
+}
+function surfaceAreaM2(){
+ const pos=body.geometry.attributes.position.array,idx=body.geometry.index.array;
+ let area=0;
+ for(let k=0;k<idx.length;k+=3){
+  const ia=idx[k]*3,ib=idx[k+1]*3,ic=idx[k+2]*3;
+  const abx=pos[ib]-pos[ia],aby=pos[ib+1]-pos[ia+1],abz=pos[ib+2]-pos[ia+2];
+  const acx=pos[ic]-pos[ia],acy=pos[ic+1]-pos[ia+1],acz=pos[ic+2]-pos[ia+2];
+  const cx=aby*acz-abz*acy,cy=abz*acx-abx*acz,cz=abx*acy-aby*acx;
+  area+=.5*Math.hypot(cx,cy,cz);
+ }
+ return area;
+}
+function volumeM3(){
+ const p=body.geometry.attributes.position.array,idx=body.geometry.index.array;let v=0;
+ for(let k=0;k<idx.length;k+=3){
+  const a=idx[k]*3,b=idx[k+1]*3,c=idx[k+2]*3;
+  v+=(p[a]*(p[b+1]*p[c+2]-p[b+2]*p[c+1])-p[a+1]*(p[b]*p[c+2]-p[b+2]*p[c])+p[a+2]*(p[b]*p[c+1]-p[b+1]*p[c]))/6;
+ }
+ return Math.abs(v);
+}
+let liveMetrics={};
+function computeLiveMetrics(){
+ if(!body)return;
+ body.geometry.computeBoundingBox();
+ const bb=body.geometry.boundingBox;
+ const heightCm=(bb.max.y-bb.min.y)*100;
+ const bsa=surfaceAreaM2();
+ const weightKg=bsa*bsa*3600/heightCm; // MakeHuman's getWeightKg / Mosteller inversion
+ const volumeL=volumeM3()*1000;
+ liveMetrics={heightCm,bsa,weightKg,volumeL,ageYears:ageYears(state.age),measures:{}};
+ for(const [name,path] of Object.entries(MEASURE_RULERS))liveMetrics.measures[name]=measureRuler(path);
+ document.querySelector("#statHeight").textContent=`${heightCm.toFixed(1)} cm`;
+ document.querySelector("#statWeight").textContent=`≈ ${weightKg.toFixed(1)} kg`;
+ document.querySelector("#statBsa").textContent=`${bsa.toFixed(2)} m²`;
+ document.querySelector("#statVolume").textContent=`≈ ${volumeL.toFixed(1)} L`;
+ for(const [id,q] of ui){
+  if(!q.real)continue;
+  if(id==="age")q.real.textContent=`${liveMetrics.ageYears.toFixed(0)} Jahre`;
+  else if(id==="height")q.real.textContent=`${heightCm.toFixed(1)} cm`;
+  else if(id==="weight")q.real.textContent=`≈ ${weightKg.toFixed(1)} kg`;
+  else if(q.target && MEASURE_RULERS[q.target]){
+   const cm=liveMetrics.measures[q.target];
+   q.real.textContent=Number.isFinite(cm)?`${cm.toFixed(1)} cm`:"";
+  }else q.real.textContent="";
+ }
+ refreshRevisionAutoValue?.();
+}
+function scheduleLiveMetrics(){
+ clearTimeout(metricTimer);metricTimer=setTimeout(computeLiveMetrics,120);
+}
+
 function parseOBJ(text){
  const verts=[],faces=[];
  for(const raw of text.split(/\r?\n/)){
@@ -489,7 +564,7 @@ async function init(){
  setTimeout(()=>loading.classList.add("done"),450);
 }
 function frame(){
- body.geometry.computeBoundingBox();const b=body.geometry.boundingBox,s=new THREE.Vector3(),c=new THREE.Vector3();b.getSize(s);b.getCenter(c);orbit.target.copy(c);
+ body.geometry.computeBoundingBox();const b=body.geometry.boundingBox,s=new THREE.Vector3(),c=new THREE.Vector3();b.getSize(s);b.getCenter(c);c.x=0;c.z=0;orbit.target.copy(c);
  const vf=THREE.MathUtils.degToRad(camera.fov),hf=2*Math.atan(Math.tan(vf/2)*Math.max(.42,innerWidth/innerHeight));
  const d=Math.max((s.y*.73)/Math.tan(vf/2),(s.x*.70)/Math.tan(hf/2),4.7);camera.position.set(c.x,c.y,c.z+d);orbit.maxDistance=Math.max(35,d*7);orbit.update();
 }
@@ -616,13 +691,13 @@ document.querySelector("#reset").addEventListener("click",()=>{
 });
 
 // ================================================================
-// v2.6.6 GUIDED DEBUG / REPORT MODE
+// v2.7.0 GUIDED DEBUG / REPORT MODE
 // Mirrors the Harness Designer guided report workflow:
 // pass/fail/skip, per-question comments, multiple screenshots,
 // persistent current question, HTML report, share fallback, JPG report.
 // ================================================================
 const DEBUG_STORAGE_KEY="bodylab_v263_guided_debug";
-const DEBUG_BUILD="BODY LAB v2.6.6 · GUIDED DEBUG";
+const DEBUG_BUILD="BODY LAB v2.7.0 · GUIDED DEBUG";
 
 const DEBUG_QUESTIONS=[
  {title:"Build / Laden",text:"Lädt Body Lab vollständig? Verschwindet der Ladehinweis und bleibt die App anschließend stabil bedienbar?"},
@@ -821,11 +896,11 @@ function downloadBlob(blob,name){
 }
 document.querySelector("#debugReportBtn").addEventListener("click",()=>{
  const html=buildDebugReportHtml();
- downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.6.6-GUIDED-report.html");
+ downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.7.0-GUIDED-report.html");
 });
 document.querySelector("#debugShareBtn").addEventListener("click",async()=>{
  const html=buildDebugReportHtml();
- const file=new File([html],"Body-Lab-v2.6.6-GUIDED-report.html",{type:"text/html"});
+ const file=new File([html],"Body-Lab-v2.7.0-GUIDED-report.html",{type:"text/html"});
  try{
    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
      await navigator.share({title:DEBUG_BUILD,files:[file]});
@@ -870,7 +945,7 @@ document.querySelector("#debugImageBtn").addEventListener("click",()=>{
    x.font="bold 25px system-ui";x.fillStyle="#111";x.fillText("Gesamtkommentar",pad,y);y+=38;
    x.font="20px system-ui";x.fillStyle="#444";wrapText(x,debugState.overall,pad,y,W-pad*2,line);
  }
- c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.6.6-GUIDED-report.jpg"),"image/jpeg",.9);
+ c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.7.0-GUIDED-report.jpg"),"image/jpeg",.9);
 });
 
 document.querySelector("#debugRestartBtn").addEventListener("click",()=>{
@@ -879,24 +954,123 @@ document.querySelector("#debugRestartBtn").addEventListener("click",()=>{
 });
 
 
-const CAL_STORAGE_KEY="bodylab_v266_calibration";
-function calLoad(){try{const x=JSON.parse(localStorage.getItem(CAL_STORAGE_KEY)||"[]");return Array.isArray(x)?x:[]}catch(_){return []}}
-let calMarks=calLoad();
-function calSave(){try{localStorage.setItem(CAL_STORAGE_KEY,JSON.stringify(calMarks))}catch(_){}}
-function cloneSimple(o){return JSON.parse(JSON.stringify(o))}
-function activeOnly(o,eps=.00001){const x={};for(const[k,v]of Object.entries(o)){if(typeof v==="number"&&Math.abs(v)>eps)x[k]=v}return x}
-function captureCalibrationContext(){return{capturedAt:new Date().toISOString(),core:cloneSimple(state),direct:activeOnly(directState),face:activeOnly(faceState),pose:document.querySelector("[data-pose].active")?.dataset?.pose||"neutral",ranges:Object.fromEntries([...ui.entries()].map(([id,q])=>[id,{min:Number(q.inp.min),max:Number(q.inp.max),value:Number(q.inp.value)}]))}}
-function describeCore(c){return [["gender",c.gender],["weight",c.weight],["muscle",c.muscle],["height",c.height],["proportions",c.proportions],["breastSize",c.breastSize],["breastFirmness",c.breastFirmness]].filter(x=>x[1]!==undefined).map(([k,v])=>`${k}=${Math.round(v*100)}%`).join(" · ")}
-const calPanel=document.querySelector("#calPanel"),calParam=document.querySelector("#calParameter"),calValue=document.querySelector("#calValue"),calUnit=document.querySelector("#calUnit"),calNote=document.querySelector("#calNote"),calCustomWrap=document.querySelector("#calCustomNameWrap"),calCustomName=document.querySelector("#calCustomName");
-function calRefreshParamUI(){const o=calParam.selectedOptions[0];calUnit.textContent=o?.dataset?.unit||"";calCustomWrap.classList.toggle("hidden",calParam.value!=="custom")}calParam.addEventListener("change",calRefreshParamUI);calRefreshParamUI();
-function calRender(){document.querySelector("#calStatus").textContent=`${calMarks.length} Marken gespeichert`;const h=document.querySelector("#calMarks");h.innerHTML="";if(!calMarks.length){const e=document.createElement("div");e.className="calCurrent";e.textContent="Noch keine Kalibrierungsmarken.";h.append(e);return}calMarks.slice().reverse().forEach((m,r)=>{const i=calMarks.length-1-r,d=document.createElement("div");d.className="calMark";const t=document.createElement("div");t.className="calMarkTop";const s=document.createElement("strong");s.textContent=`${m.label}: ${m.reference}${m.unit?" "+m.unit:""}`;const b=document.createElement("button");b.type="button";b.textContent="Löschen";b.onclick=()=>{calMarks.splice(i,1);calSave();calRender()};t.append(s,b);const p=document.createElement("p");p.textContent=(m.note?m.note+" · ":"")+describeCore(m.context.core)+` · Advanced aktiv: ${Object.keys(m.context.direct).length} · Face aktiv: ${Object.keys(m.context.face).length}`;d.append(t,p);h.append(d)})}calRender();
-document.querySelector("#calOpenBtn").onclick=()=>{calPanel.classList.remove("hidden");calRender()};document.querySelector("#calCloseBtn").onclick=()=>calPanel.classList.add("hidden");
-document.querySelector("#calSaveMarkBtn").onclick=()=>{const raw=calValue.value.trim();if(!raw){alert("Bitte zuerst einen Referenzwert eingeben.");return}let label=calParam.selectedOptions[0]?.textContent||calParam.value;if(calParam.value==="custom"){label=calCustomName.value.trim();if(!label){alert("Bitte einen Namen eingeben.");return}}calMarks.push({type:calParam.value,label,reference:raw,unit:calUnit.textContent.trim(),note:calNote.value.trim(),context:captureCalibrationContext()});calSave();calRender();calNote.value=""};
-document.querySelector("#calCurrentBtn").onclick=()=>{const c=captureCalibrationContext(),e=document.querySelector("#calCurrent");e.classList.remove("hidden");e.textContent="CORE\n"+JSON.stringify(c.core,null,2)+"\n\nAKTIVE BODY-MORPHS\n"+JSON.stringify(c.direct,null,2)+"\n\nAKTIVE FACE-MORPHS\n"+JSON.stringify(c.face,null,2)+"\n\nPOSE\n"+c.pose};
-function calDownload(blob,name){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
-document.querySelector("#calExportJsonBtn").onclick=()=>{const p={build:"BODY LAB v2.6.6",exportedAt:new Date().toISOString(),count:calMarks.length,marks:calMarks};calDownload(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}),"Body-Lab-v2.6.6-CALIBRATION.json")};
-document.querySelector("#calExportHtmlBtn").onclick=()=>{const rows=calMarks.map((m,i)=>`<section><h2>${i+1}. ${m.label} — ${m.reference} ${m.unit}</h2><p>${m.note||""}</p><pre>${JSON.stringify(m.context,null,2)}</pre></section>`).join("");calDownload(new Blob([`<!doctype html><meta charset="utf-8"><title>Body Lab Calibration</title><body><h1>BODY LAB v2.6.6 · CALIBRATION</h1>${rows}</body>`],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.6.6-CALIBRATION-report.html")};
-document.querySelector("#calClearBtn").onclick=()=>{if(confirm("Alle Kalibrierungsmarken wirklich löschen?")){calMarks=[];calSave();calRender()}};
+// ===== Custom user presets =====
+const USER_PRESET_KEY="bodylab_v270_user_presets";
+function loadUserPresets(){try{return JSON.parse(localStorage.getItem(USER_PRESET_KEY)||"{}")}catch(_){return {}}}
+let userPresets=loadUserPresets();
+function saveUserPresets(){localStorage.setItem(USER_PRESET_KEY,JSON.stringify(userPresets))}
+function captureBodyState(){return{core:JSON.parse(JSON.stringify(state)),direct:{...directState},face:{...faceState},ranges:Object.fromEntries([...ui].map(([id,q])=>[id,{min:+q.inp.min,max:+q.inp.max}]))}}
+function restoreBodyState(s){
+ Object.assign(state,s.core||{});
+ for(const k of Object.keys(directState))directState[k]=s.direct?.[k]||0;
+ for(const k of Object.keys(faceState))faceState[k]=s.face?.[k]||0;
+ for(const [id,q] of ui){
+  const v=state[id]??directState[id]??faceState[id];
+  if(v!==undefined){q.inp.value=v;q.out.textContent=q.display(v)}
+  if(s.ranges?.[id]){q.inp.min=s.ranges[id].min;q.inp.max=s.ranges[id].max}
+ }
+ updateBody();
+}
+function renderUserPresets(){
+ const h=document.querySelector("#customPresets");h.innerHTML="";
+ for(const name of Object.keys(userPresets)){
+  const b=document.createElement("button");b.textContent=name;b.onclick=()=>restoreBodyState(userPresets[name]);
+  b.addEventListener("contextmenu",e=>{e.preventDefault();if(confirm(`Preset "${name}" löschen?`)){delete userPresets[name];saveUserPresets();renderUserPresets()}});
+  h.append(b);
+ }
+}
+document.querySelector("#saveCustomPreset").onclick=()=>{
+ const name=document.querySelector("#customPresetName").value.trim();
+ if(!name){alert("Bitte Preset benennen.");return}
+ userPresets[name]=captureBodyState();saveUserPresets();renderUserPresets();document.querySelector("#customPresetName").value="";
+};
+renderUserPresets();
+
+// ===== Revision / calibration + UI relevance =====
+const REV_KEY="bodylab_v270_revision",MARK_KEY="bodylab_v270_calmarks";
+let revConfig={};try{revConfig=JSON.parse(localStorage.getItem(REV_KEY)||"{}")}catch(_){}
+let revMarks=[];try{revMarks=JSON.parse(localStorage.getItem(MARK_KEY)||"[]")}catch(_){}
+function saveRev(){localStorage.setItem(REV_KEY,JSON.stringify(revConfig));localStorage.setItem(MARK_KEY,JSON.stringify(revMarks))}
+const revSelect=document.querySelector("#revParameter");
+function populateRevisionOptions(){
+ revSelect.innerHTML="";
+ for(const [id,q] of ui){
+  const o=document.createElement("option");o.value=id;o.textContent=`${q.labelEl.textContent} · ${id}`;revSelect.append(o);
+ }
+}
+function defaultTier(id){return ["gender","age","weight","muscle","height","proportions","breastSize","breastFirmness"].includes(id)?"main":"advanced"}
+function applyRevisionLayout(){
+ let fine=0,main=0;
+ for(const [id,q] of ui){
+  const c=revConfig[id]||{};
+  if(c.label)q.labelEl.textContent=c.label;
+  const tier=c.tier||defaultTier(id);
+  // Core controls already live in main basic panel. Advanced controls can be promoted.
+  const isCore=q.homeParent?.id==="coreControls";
+  if(isCore)continue;
+  if(tier==="main"){document.querySelector("#mainExtraControls").append(q.wrap);main++}
+  else if(tier==="fine"){document.querySelector("#fineControls").append(q.wrap);fine++}
+  else q.homeParent.append(q.wrap);
+ }
+ document.querySelector("#mainExtraSection").classList.toggle("hidden",main===0);
+ document.querySelector("#fineSection").classList.toggle("hidden",fine===0);
+ document.querySelector("#fineCount").textContent=fine;
+}
+function suggestedUnit(id,q){
+ if(id==="weight")return "kg";if(id==="height")return "cm";if(id==="age")return "Jahre";
+ if(q?.target && MEASURE_RULERS[q.target])return "cm";return "";
+}
+function autoValueFor(id){
+ const q=ui.get(id);if(!q)return "";
+ if(id==="weight"&&liveMetrics.weightKg)return `${liveMetrics.weightKg.toFixed(1)} kg`;
+ if(id==="height"&&liveMetrics.heightCm)return `${liveMetrics.heightCm.toFixed(1)} cm`;
+ if(id==="age")return `${ageYears(state.age).toFixed(0)} Jahre`;
+ if(q.target&&liveMetrics.measures?.[q.target])return `${liveMetrics.measures[q.target].toFixed(1)} cm`;
+ return `${q.out.textContent}`;
+}
+function loadRevisionForm(){
+ const id=revSelect.value,q=ui.get(id);if(!q)return;
+ const c=revConfig[id]||{};
+ document.querySelector("#revTier").value=c.tier||defaultTier(id);
+ document.querySelector("#revLabel").value=c.label||q.labelEl.textContent;
+ document.querySelector("#revNote").value=c.note||"";
+ document.querySelector("#revUnit").value=c.unit??suggestedUnit(id,q);
+ document.querySelector("#revReference").value="";
+ refreshRevisionAutoValue();
+ renderRevisionMarks();
+}
+function refreshRevisionAutoValue(){
+ if(!revSelect)return;const id=revSelect.value;if(!id)return;
+ const el=document.querySelector("#revAutoValue");if(el)el.textContent=`Aktueller berechneter/technischer Wert: ${autoValueFor(id)}`;
+}
+function renderRevisionMarks(){
+ const h=document.querySelector("#revMarks");h.innerHTML="";
+ revMarks.filter(m=>m.id===revSelect.value).forEach(m=>{
+  const d=document.createElement("div");d.className="revMark";
+  d.innerHTML=`<strong>${m.reference}${m.unit?" "+m.unit:""}</strong><br>${m.autoValue||""}${m.note?" · "+m.note:""}`;
+  h.append(d);
+ });
+}
+document.querySelector("#revOpenBtn").onclick=()=>{populateRevisionOptions();applyRevisionLayout();document.querySelector("#revPanel").classList.remove("hidden");loadRevisionForm()};
+document.querySelector("#revCloseBtn").onclick=()=>document.querySelector("#revPanel").classList.add("hidden");
+revSelect.onchange=loadRevisionForm;
+document.querySelector("#revApplyBtn").onclick=()=>{
+ const id=revSelect.value,q=ui.get(id);
+ revConfig[id]={...(revConfig[id]||{}),tier:document.querySelector("#revTier").value,label:document.querySelector("#revLabel").value.trim()||q.labelEl.textContent,note:document.querySelector("#revNote").value.trim(),unit:document.querySelector("#revUnit").value.trim()};
+ saveRev();applyRevisionLayout();loadRevisionForm();
+};
+document.querySelector("#revMarkBtn").onclick=()=>{
+ const id=revSelect.value,q=ui.get(id),reference=document.querySelector("#revReference").value.trim()||autoValueFor(id).replace(/[^\d.,-]/g,"");
+ if(!reference){alert("Referenzwert eingeben oder berechenbaren Parameter wählen.");return}
+ revMarks.push({id,label:document.querySelector("#revLabel").value.trim()||q.labelEl.textContent,reference,unit:document.querySelector("#revUnit").value.trim(),autoValue:autoValueFor(id),note:document.querySelector("#revNote").value.trim(),capturedAt:new Date().toISOString(),state:captureBodyState()});
+ saveRev();renderRevisionMarks();
+};
+document.querySelector("#revClearMarksBtn").onclick=()=>{if(confirm("Alle Kalibrierungsmarken löschen?")){revMarks=[];saveRev();renderRevisionMarks()}};
+document.querySelector("#revExportBtn").onclick=()=>{
+ const payload={build:"BODY LAB v2.7.0",exportedAt:new Date().toISOString(),ui:revConfig,marks:revMarks,userPresets:Object.keys(userPresets)};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="Body-Lab-v2.7.0-REVISION.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);
+};
+populateRevisionOptions();applyRevisionLayout();
 
 function resize(){
  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();

@@ -176,7 +176,7 @@ Largest file in this build is intentionally kept below typical mobile GitHub web
 All exact macro data is now stored in small UTF-8 JavaScript modules. No macro .bin files remain. This build is intended for iPhone/GitHub mobile upload.
 
 
-## v2.6.5 Guided Debug
+## v2.7.0 Guided Debug
 
 Adds the Harness-Designer-style guided test/report mode:
 - Pass / Fail / Skip per question
@@ -192,7 +192,7 @@ Adds the Harness-Designer-style guided test/report mode:
 - compact JPG report export
 
 
-## v2.6.5 — Safari loading architecture fix
+## v2.7.0 — Safari loading architecture fix
 
 Critical change:
 - `macro-text-manifest.js` no longer imports all 87 `macrodata-*.js` files at module startup.
@@ -207,7 +207,7 @@ Critical change:
 Existing static `macrodata-*.js` files stay in the repository unchanged.
 
 
-## v2.6.5 — unfragmented asset build
+## v2.7.0 — unfragmented asset build
 
 This build intentionally uses the six original exact MakeHuman macro binaries directly.
 No macrodata text fragments, no chunk manifest, and no body-morph JS fragments are used.
@@ -217,5 +217,25 @@ size of one web commit, upload/commit the large files individually (or in small 
 Each individual file in this build remains below GitHub's 25 MiB browser file limit.
 
 
-## v2.6.6 Calibration
-Adds a persistent calibration mode for user-defined reference marks and JSON/HTML export.
+## v2.7.0 — Measurement + Revision UI
+
+Uses 20 original MakeHuman measurement rulers extracted from
+`plugins/0_modeling_a_measurement.py`.
+
+Live dual display:
+- Morph/technical value remains visible.
+- Age additionally shows MakeHuman age in years.
+- Height shows current mesh height in cm.
+- Weight shows MakeHuman-style Mosteller estimate from current mesh surface + height.
+- Official measurement modifiers show current resulting cm using MakeHuman's ruler vertex paths.
+- Body stats show height, estimated weight, BSA and volume.
+
+Revision mode:
+- Every UI parameter can be classified as Hauptansicht / Feinanpassung / Advanced.
+- Advanced body/face controls are moved live according to the saved classification.
+- Every parameter can be renamed and annotated.
+- Reference/calibration marks store the full body state and current computed value.
+- Revision data exports as JSON.
+
+User presets:
+- Current full body state can be named and saved locally.
