@@ -149,27 +149,11 @@ function makeControl(parent,id,label,min,max,value,handler,display=v=>fmt(v),opt
    handler(v);
  });
 
- var inlineRev=document.createElement("div");
- inlineRev.className="inlineRevision";
- inlineRev.innerHTML=
-   '<div class="irTwo">'+
-     '<label>Anzeige<select class="irTier"><option value="main">Hauptansicht</option><option value="fine">Feinanpassung</option><option value="advanced">Advanced</option></select></label>'+
-     '<label>Anzeigename<input class="irLabel" type="text"></label>'+
-   '</div>'+
-   '<div class="irTwo">'+
-     '<label>Referenzwert<input class="irReference" type="text" inputmode="decimal"></label>'+
-     '<label>Einheit<input class="irUnit" type="text" placeholder="cm / kg / Jahre"></label>'+
-   '</div>'+
-   '<label>Notiz<textarea class="irNote"></textarea></label>'+
-   '<div class="irAuto">Aktueller Wert: -</div>'+
-   '<div class="irBtns"><button class="irSaveUI" type="button">UI speichern</button><button class="irSaveMark" type="button">Marke speichern</button></div>';
- wrap.append(inlineRev);
-
  parent.append(wrap);
  ui.set(id,{
    inp,out,row,wrap,display,default:value,
    defaultMin:min,defaultMax:max,
-   rangeEditor,real,labelEl:lab,homeParent:parent,target:opts.target||null,inlineRev:inlineRev
+   rangeEditor,real,labelEl:lab,homeParent:parent,target:opts.target||null
  });
 }
 
@@ -415,7 +399,7 @@ function computeLiveMetrics(){
    q.real.textContent=Number.isFinite(cm)?`${cm.toFixed(1)} cm`:"";
   }else q.real.textContent="";
  }
- if(revisionMode)revRefreshAll();
+ refreshRevisionAutoValue?.();
 }
 function scheduleLiveMetrics(){
  clearTimeout(metricTimer);metricTimer=setTimeout(computeLiveMetrics,120);
@@ -531,10 +515,7 @@ function applyPose(name){
    rot("lowerleg01.L",-.25,0,0);rot("upperarm01.L",-.12,0,.18);rot("upperarm01.R",.12,0,-.18);
  }
  if(skeleton)skeleton.update();
- // Start rendering independently of later UI helpers.
-renderer.setAnimationLoop(function(){orbit.update();renderer.render(scene,camera)});
-
-document.querySelectorAll("[data-pose]").forEach(b=>b.classList.toggle("active",b.dataset.pose===name));
+ document.querySelectorAll("[data-pose]").forEach(b=>b.classList.toggle("active",b.dataset.pose===name));
 }
 
 async function init(){
@@ -710,13 +691,13 @@ document.querySelector("#reset").addEventListener("click",()=>{
 });
 
 // ================================================================
-// v2.7.4 GUIDED DEBUG / REPORT MODE
+// v2.7.5 GUIDED DEBUG / REPORT MODE
 // Mirrors the Harness Designer guided report workflow:
 // pass/fail/skip, per-question comments, multiple screenshots,
 // persistent current question, HTML report, share fallback, JPG report.
 // ================================================================
 const DEBUG_STORAGE_KEY="bodylab_v263_guided_debug";
-const DEBUG_BUILD="BODY LAB v2.7.4 · GUIDED DEBUG";
+const DEBUG_BUILD="BODY LAB v2.7.5 · GUIDED DEBUG";
 
 const DEBUG_QUESTIONS=[
  {title:"Build / Laden",text:"Lädt Body Lab vollständig? Verschwindet der Ladehinweis und bleibt die App anschließend stabil bedienbar?"},
@@ -915,11 +896,11 @@ function downloadBlob(blob,name){
 }
 document.querySelector("#debugReportBtn").addEventListener("click",()=>{
  const html=buildDebugReportHtml();
- downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.7.4-GUIDED-report.html");
+ downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.7.5-GUIDED-report.html");
 });
 document.querySelector("#debugShareBtn").addEventListener("click",async()=>{
  const html=buildDebugReportHtml();
- const file=new File([html],"Body-Lab-v2.7.4-GUIDED-report.html",{type:"text/html"});
+ const file=new File([html],"Body-Lab-v2.7.5-GUIDED-report.html",{type:"text/html"});
  try{
    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
      await navigator.share({title:DEBUG_BUILD,files:[file]});
@@ -964,7 +945,7 @@ document.querySelector("#debugImageBtn").addEventListener("click",()=>{
    x.font="bold 25px system-ui";x.fillStyle="#111";x.fillText("Gesamtkommentar",pad,y);y+=38;
    x.font="20px system-ui";x.fillStyle="#444";wrapText(x,debugState.overall,pad,y,W-pad*2,line);
  }
- c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.7.4-GUIDED-report.jpg"),"image/jpeg",.9);
+ c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.7.5-GUIDED-report.jpg"),"image/jpeg",.9);
 });
 
 document.querySelector("#debugRestartBtn").addEventListener("click",()=>{
@@ -1005,127 +986,72 @@ document.querySelector("#saveCustomPreset").onclick=()=>{
 };
 renderUserPresets();
 
-
-// ===== Inline revision v2.7.4: isolated from rendering/initialization =====
-var REV_UI_KEY="bodylab_v274_ui";
-var REV_MARK_KEY="bodylab_v274_marks";
-var revisionMode=false;
-var revConfig={};
-var revMarks=[];
-try{revConfig=JSON.parse(localStorage.getItem(REV_UI_KEY)||"{}")||{}}catch(e){revConfig={}}
-try{revMarks=JSON.parse(localStorage.getItem(REV_MARK_KEY)||"[]")||[]}catch(e){revMarks=[]}
-
-function revStore(){
- try{
-  localStorage.setItem(REV_UI_KEY,JSON.stringify(revConfig));
-  localStorage.setItem(REV_MARK_KEY,JSON.stringify(revMarks));
- }catch(e){}
-}
-function revTierDefault(id){
- return ["gender","age","weight","muscle","height","proportions","breastSize","breastFirmness"].indexOf(id)>=0?"main":"advanced";
-}
-function revUnitDefault(id,q){
- if(id==="weight")return "kg";
- if(id==="height")return "cm";
- if(id==="age")return "Jahre";
- if(q && q.target && typeof MEASURE_RULERS!=="undefined" && MEASURE_RULERS[q.target])return "cm";
- return "";
-}
-function revCurrentValue(id,q){
- if(id==="weight" && typeof liveMetrics!=="undefined" && liveMetrics.weightKg)return liveMetrics.weightKg.toFixed(1)+" kg";
- if(id==="height" && typeof liveMetrics!=="undefined" && liveMetrics.heightCm)return liveMetrics.heightCm.toFixed(1)+" cm";
- if(id==="age")return ageYears(state.age).toFixed(0)+" Jahre";
- if(q && q.target && typeof liveMetrics!=="undefined" && liveMetrics.measures && liveMetrics.measures[q.target]){
-   return liveMetrics.measures[q.target].toFixed(1)+" cm";
+// ===== Revision / calibration + UI relevance =====
+const REV_KEY="bodylab_v270_revision",MARK_KEY="bodylab_v270_calmarks";
+let revConfig={};try{revConfig=JSON.parse(localStorage.getItem(REV_KEY)||"{}")}catch(_){}
+let revMarks=[];try{revMarks=JSON.parse(localStorage.getItem(MARK_KEY)||"[]")}catch(_){}
+function saveRev(){localStorage.setItem(REV_KEY,JSON.stringify(revConfig));localStorage.setItem(MARK_KEY,JSON.stringify(revMarks))}
+const revSelect=document.querySelector("#revParameter");
+function populateRevisionOptions(){
+ revSelect.innerHTML="";
+ for(const [id,q] of ui){
+  const o=document.createElement("option");o.value=id;o.textContent=`${q.labelEl.textContent} · ${id}`;revSelect.append(o);
  }
- var t=q&&q.out?q.out.textContent:"";
- var r=q&&q.real?q.real.textContent:"";
- return r?t+" · "+r:t;
 }
-function revFillOne(id,q){
- var r=q.inlineRev;if(!r)return;
- var c=revConfig[id]||{};
- r.querySelector(".irTier").value=c.tier||revTierDefault(id);
- r.querySelector(".irLabel").value=c.label||q.labelEl.textContent;
- r.querySelector(".irUnit").value=(c.unit!==undefined)?c.unit:revUnitDefault(id,q);
- r.querySelector(".irNote").value=c.note||"";
- r.querySelector(".irAuto").textContent="Aktueller Wert: "+revCurrentValue(id,q);
+function defaultTier(id){return ["gender","age","weight","muscle","height","proportions","breastSize","breastFirmness"].includes(id)?"main":"advanced"}
+function applyRevisionLayout(){
+ let fine=0,main=0;
+ for(const [id,q] of ui){
+  const c=revConfig[id]||{};
+  if(c.label)q.labelEl.textContent=c.label;
+  const tier=c.tier||defaultTier(id);
+  // Core controls already live in main basic panel. Advanced controls can be promoted.
+  const isCore=q.homeParent?.id==="coreControls";
+  if(isCore)continue;
+  if(tier==="main"){document.querySelector("#mainExtraControls").append(q.wrap);main++}
+  else if(tier==="fine"){document.querySelector("#fineControls").append(q.wrap);fine++}
+  else q.homeParent.append(q.wrap);
+ }
+ document.querySelector("#mainExtraSection").classList.toggle("hidden",main===0);
+ document.querySelector("#fineSection").classList.toggle("hidden",fine===0);
+ document.querySelector("#fineCount").textContent=fine;
 }
-function revRefreshAll(){
- ui.forEach(function(q,id){revFillOne(id,q)});
+function suggestedUnit(id,q){
+ if(id==="weight")return "kg";if(id==="height")return "cm";if(id==="age")return "Jahre";
+ if(q?.target && MEASURE_RULERS[q.target])return "cm";return "";
 }
-function revApplyLayout(){
- var mainTarget=document.getElementById("mainExtraControls");
- var fineTarget=document.getElementById("fineControls");
- var mainItems=[],fineItems=[],advancedItems=[];
- ui.forEach(function(q,id){
-   if(q.homeParent && q.homeParent.id==="coreControls")return;
-   var tier=(revConfig[id]&&revConfig[id].tier)||revTierDefault(id);
-   if(tier==="main")mainItems.push(q);
-   else if(tier==="fine")fineItems.push(q);
-   else advancedItems.push(q);
- });
- mainItems.forEach(function(q){mainTarget.appendChild(q.wrap)});
- fineItems.forEach(function(q){fineTarget.appendChild(q.wrap)});
- advancedItems.forEach(function(q){q.homeParent.appendChild(q.wrap)});
- document.getElementById("mainExtraSection").classList.toggle("hidden",mainItems.length===0);
- document.getElementById("fineSection").classList.toggle("hidden",fineItems.length===0);
- document.getElementById("fineCount").textContent=String(fineItems.length);
+function autoValueFor(id){
+ const q=ui.get(id);if(!q)return "";
+ if(id==="weight"&&liveMetrics.weightKg)return `${liveMetrics.weightKg.toFixed(1)} kg`;
+ if(id==="height"&&liveMetrics.heightCm)return `${liveMetrics.heightCm.toFixed(1)} cm`;
+ if(id==="age")return `${ageYears(state.age).toFixed(0)} Jahre`;
+ if(q.target&&liveMetrics.measures?.[q.target])return `${liveMetrics.measures[q.target].toFixed(1)} cm`;
+ return `${q.out.textContent}`;
 }
-function revBindAll(){
- ui.forEach(function(q,id){
-   var r=q.inlineRev;
-   if(!r || r.getAttribute("data-bound")==="1")return;
-   r.setAttribute("data-bound","1");
-   r.querySelector(".irSaveUI").addEventListener("click",function(){
-     revConfig[id]={
-       tier:r.querySelector(".irTier").value,
-       label:r.querySelector(".irLabel").value.trim()||q.labelEl.textContent,
-       unit:r.querySelector(".irUnit").value.trim(),
-       note:r.querySelector(".irNote").value.trim()
-     };
-     q.labelEl.textContent=revConfig[id].label;
-     revStore();
-     revApplyLayout();
-     revRefreshAll();
-   });
-   r.querySelector(".irSaveMark").addEventListener("click",function(){
-     var ref=r.querySelector(".irReference").value.trim();
-     if(!ref){
-       var auto=revCurrentValue(id,q);
-       ref=auto.replace(/[^\d.,-]/g,"");
-     }
-     if(!ref){alert("Bitte Referenzwert eingeben.");return}
-     revMarks.push({
-       id:id,
-       label:r.querySelector(".irLabel").value.trim()||q.labelEl.textContent,
-       reference:ref,
-       unit:r.querySelector(".irUnit").value.trim(),
-       autoValue:revCurrentValue(id,q),
-       note:r.querySelector(".irNote").value.trim(),
-       time:new Date().toISOString()
-     });
-     revStore();
-     r.querySelector(".irReference").value="";
-     r.querySelector(".irAuto").textContent="Marke gespeichert · "+revCurrentValue(id,q);
-   });
+function loadRevisionForm(){
+ const id=revSelect.value,q=ui.get(id);if(!q)return;
+ const c=revConfig[id]||{};
+ document.querySelector("#revTier").value=c.tier||defaultTier(id);
+ document.querySelector("#revLabel").value=c.label||q.labelEl.textContent;
+ document.querySelector("#revNote").value=c.note||"";
+ document.querySelector("#revUnit").value=c.unit??suggestedUnit(id,q);
+ document.querySelector("#revReference").value="";
+ refreshRevisionAutoValue();
+ renderRevisionMarks();
+}
+function refreshRevisionAutoValue(){
+ if(!revSelect)return;const id=revSelect.value;if(!id)return;
+ const el=document.querySelector("#revAutoValue");if(el)el.textContent=`Aktueller berechneter/technischer Wert: ${autoValueFor(id)}`;
+}
+function renderRevisionMarks(){
+ const h=document.querySelector("#revMarks");h.innerHTML="";
+ revMarks.filter(m=>m.id===revSelect.value).forEach(m=>{
+  const d=document.createElement("div");d.className="revMark";
+  d.innerHTML=`<strong>${m.reference}${m.unit?" "+m.unit:""}</strong><br>${m.autoValue||""}${m.note?" · "+m.note:""}`;
+  h.append(d);
  });
 }
-function setRevisionMode(on){
- revisionMode=!!on;
- document.body.classList.toggle("revisionMode",revisionMode);
- var b=document.getElementById("revOpenBtn");
- b.classList.toggle("active",revisionMode);
- b.textContent=revisionMode?"Revision ✓":"Revision";
- if(revisionMode)revRefreshAll();
-}
-var revButton=document.getElementById("revOpenBtn");
-if(revButton){
- revButton.addEventListener("click",function(){setRevisionMode(!revisionMode)});
-}
-revBindAll();
-revApplyLayout();
-document.querySelector("#revPanel").classList.remove("hidden");loadRevisionForm()};
+document.querySelector("#revOpenBtn").onclick=()=>{populateRevisionOptions();applyRevisionLayout();document.querySelector("#revPanel").classList.remove("hidden");loadRevisionForm()};
 document.querySelector("#revCloseBtn").onclick=()=>document.querySelector("#revPanel").classList.add("hidden");
 revSelect.onchange=loadRevisionForm;
 document.querySelector("#revApplyBtn").onclick=()=>{
@@ -1141,8 +1067,8 @@ document.querySelector("#revMarkBtn").onclick=()=>{
 };
 document.querySelector("#revClearMarksBtn").onclick=()=>{if(confirm("Alle Kalibrierungsmarken löschen?")){revMarks=[];saveRev();renderRevisionMarks()}};
 document.querySelector("#revExportBtn").onclick=()=>{
- const payload={build:"BODY LAB v2.7.4",exportedAt:new Date().toISOString(),ui:revConfig,marks:revMarks,userPresets:Object.keys(userPresets)};
- const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="Body-Lab-v2.7.4-REVISION.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);
+ const payload={build:"BODY LAB v2.7.5",exportedAt:new Date().toISOString(),ui:revConfig,marks:revMarks,userPresets:Object.keys(userPresets)};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="Body-Lab-v2.7.5-REVISION.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);
 };
 populateRevisionOptions();applyRevisionLayout();
 
@@ -1151,4 +1077,4 @@ function resize(){
  renderer.setSize(innerWidth,innerHeight,false);
  setSheetTop(sheetTop);
 }
-addEventListener("resize",resize);resize();
+addEventListener("resize",resize);resize();renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera)});
