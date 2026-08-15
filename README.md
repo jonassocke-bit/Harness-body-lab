@@ -176,7 +176,7 @@ Largest file in this build is intentionally kept below typical mobile GitHub web
 All exact macro data is now stored in small UTF-8 JavaScript modules. No macro .bin files remain. This build is intended for iPhone/GitHub mobile upload.
 
 
-## v2.6.4 Guided Debug
+## v2.6.5 Guided Debug
 
 Adds the Harness-Designer-style guided test/report mode:
 - Pass / Fail / Skip per question
@@ -192,7 +192,7 @@ Adds the Harness-Designer-style guided test/report mode:
 - compact JPG report export
 
 
-## v2.6.4 — Safari loading architecture fix
+## v2.6.5 — Safari loading architecture fix
 
 Critical change:
 - `macro-text-manifest.js` no longer imports all 87 `macrodata-*.js` files at module startup.
@@ -205,3 +205,13 @@ Critical change:
 - The neutral mesh remains visible if macro loading fails.
 
 Existing static `macrodata-*.js` files stay in the repository unchanged.
+
+
+## v2.6.5 — unfragmented asset build
+
+This build intentionally uses the six original exact MakeHuman macro binaries directly.
+No macrodata text fragments, no chunk manifest, and no body-morph JS fragments are used.
+
+Upload the files to the repository root. Because GitHub mobile appears to limit the total
+size of one web commit, upload/commit the large files individually (or in small groups).
+Each individual file in this build remains below GitHub's 25 MiB browser file limit.

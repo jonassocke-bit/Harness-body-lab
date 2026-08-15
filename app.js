@@ -7,47 +7,18 @@ import { GROUP_LABELS } from "./labels.js";
 import { FACE_GROUPS } from "./face-config.js";
 import { FACE } from "./face-morphs.js";
 import { RIG } from "./rig-data.js";
-import { MACRO_TEXT_MANIFEST } from "./macro-text-manifest.js";
 
 
-function base64ToBytes(s){
- const bin=atob(s),out=new Uint8Array(bin.length);
- for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);
- return out;
-}
-async function fetchTextWithTimeout(url,ms=15000){
+async function fetchBinaryMaybeChunked(url,onPart){
  const ctrl=new AbortController();
- const timer=setTimeout(()=>ctrl.abort(),ms);
+ const timer=setTimeout(()=>ctrl.abort(),30000);
  try{
   const r=await fetch(url,{cache:"force-cache",signal:ctrl.signal});
   if(!r.ok)throw new Error(`${url} · HTTP ${r.status}`);
-  return await r.text();
+  if(onPart)onPart(1,1);
+  return await r.arrayBuffer();
  }finally{clearTimeout(timer)}
 }
-async function loadBase64ModuleFile(filename){
- const text=await fetchTextWithTimeout("./"+filename,15000);
- // macrodata files are intentionally simple: export const NAME="BASE64";
- const m=text.match(/=\s*"([A-Za-z0-9+/=]+)"\s*;/);
- if(!m)throw new Error(`${filename} · ungültige Makrodatei`);
- return base64ToBytes(m[1]);
-}
-async function fetchBinaryMaybeChunked(url,onPart){
- const filename=url.split("/").pop(),info=MACRO_TEXT_MANIFEST[filename];
- if(!info){
-  const r=await fetch(url,{cache:"force-cache"});
-  if(!r.ok)throw new Error(url);
-  return await r.arrayBuffer();
- }
- const out=new Uint8Array(info.size);let off=0;
- for(let i=0;i<info.parts.length;i++){
-  const bytes=await loadBase64ModuleFile(info.parts[i]);
-  out.set(bytes,off);off+=bytes.length;
-  if(onPart)onPart(i+1,info.parts.length);
-  await new Promise(resolve=>setTimeout(resolve,0));
- }
- return out.buffer;
-}
-
 
 const N=13380;
 let exactChunks=[];
@@ -645,13 +616,13 @@ document.querySelector("#reset").addEventListener("click",()=>{
 });
 
 // ================================================================
-// v2.6.4 GUIDED DEBUG / REPORT MODE
+// v2.6.5 GUIDED DEBUG / REPORT MODE
 // Mirrors the Harness Designer guided report workflow:
 // pass/fail/skip, per-question comments, multiple screenshots,
 // persistent current question, HTML report, share fallback, JPG report.
 // ================================================================
 const DEBUG_STORAGE_KEY="bodylab_v263_guided_debug";
-const DEBUG_BUILD="BODY LAB v2.6.4 · GUIDED DEBUG";
+const DEBUG_BUILD="BODY LAB v2.6.5 · GUIDED DEBUG";
 
 const DEBUG_QUESTIONS=[
  {title:"Build / Laden",text:"Lädt Body Lab vollständig? Verschwindet der Ladehinweis und bleibt die App anschließend stabil bedienbar?"},
@@ -850,11 +821,11 @@ function downloadBlob(blob,name){
 }
 document.querySelector("#debugReportBtn").addEventListener("click",()=>{
  const html=buildDebugReportHtml();
- downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.6.4-GUIDED-report.html");
+ downloadBlob(new Blob([html],{type:"text/html;charset=utf-8"}),"Body-Lab-v2.6.5-GUIDED-report.html");
 });
 document.querySelector("#debugShareBtn").addEventListener("click",async()=>{
  const html=buildDebugReportHtml();
- const file=new File([html],"Body-Lab-v2.6.4-GUIDED-report.html",{type:"text/html"});
+ const file=new File([html],"Body-Lab-v2.6.5-GUIDED-report.html",{type:"text/html"});
  try{
    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
      await navigator.share({title:DEBUG_BUILD,files:[file]});
@@ -899,7 +870,7 @@ document.querySelector("#debugImageBtn").addEventListener("click",()=>{
    x.font="bold 25px system-ui";x.fillStyle="#111";x.fillText("Gesamtkommentar",pad,y);y+=38;
    x.font="20px system-ui";x.fillStyle="#444";wrapText(x,debugState.overall,pad,y,W-pad*2,line);
  }
- c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.6.4-GUIDED-report.jpg"),"image/jpeg",.9);
+ c.toBlob(blob=>blob&&downloadBlob(blob,"Body-Lab-v2.6.5-GUIDED-report.jpg"),"image/jpeg",.9);
 });
 
 document.querySelector("#debugRestartBtn").addEventListener("click",()=>{
